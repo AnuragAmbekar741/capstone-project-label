@@ -35,6 +35,16 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
+# Database health check
+@app.get("/health/db")
+async def db_health_check():
+    from tortoise import Tortoise
+    try:
+        await Tortoise.get_connection("default").execute_query("SELECT 1")
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+
 # Simple test endpoint
 @app.get("/test")
 async def test():

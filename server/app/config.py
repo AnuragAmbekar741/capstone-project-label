@@ -10,4 +10,20 @@ class Settings(BaseModel):
     PORT: int = 8000
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
 
+    #Database Configuration
+    DATABASE_URL:str = os.environ.get("DATABASE_URL","")
+
+    # Tortoise ORM Configuration
+    TORTOISE_ORM:dict = {
+        "connections":{
+            "default":DATABASE_URL
+        },
+        "apps":{
+            "models": {
+                "models": ["app.api.models", "aerich.models"],
+                "default_connection": "default",
+            }
+        }
+    }
+
 settings = Settings()

@@ -11,12 +11,15 @@ class Settings(BaseModel):
     ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
 
     #Database Configuration
-    DATABASE_URL:str = os.environ.get("DATABASE_URL","")
+    DATABASE_URL:str = os.environ.get("DATABASE_URL","sqlite://db.sqlite3")
 
     # Tortoise ORM Configuration
-    TORTOISE_ORM:dict = {
+
+settings = Settings()
+
+TORTOISE_ORM:dict = {
         "connections":{
-            "default":DATABASE_URL
+            "default":settings.DATABASE_URL
         },
         "apps":{
             "models": {
@@ -25,5 +28,3 @@ class Settings(BaseModel):
             }
         }
     }
-
-settings = Settings()

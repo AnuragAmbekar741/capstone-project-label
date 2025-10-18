@@ -20,3 +20,15 @@ dev:
 # Install dependencies
 install:
 	poetry install
+
+# Initialize Aerich migrations (run once)
+migrate-init:
+	poetry run aerich init -t app.config.TORTOISE_ORM
+
+# Generate migration for model changes
+migrate-gen:
+	poetry run aerich init-db
+
+# Apply migrations to database
+migrate-up:
+	poetry run aerich upgrade

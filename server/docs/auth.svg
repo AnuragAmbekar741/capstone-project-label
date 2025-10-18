@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant BE as Backend
+    participant G as Google
+    participant DB as Database
+
+    U->>FE: Click "Sign in with Google"
+    FE->>G: Redirect to Google OAuth
+    G->>U: Show Google login page
+    U->>G: Enter credentials
+    G->>FE: Return access_token
+    FE->>BE: POST /auth/google with access_token
+    BE->>G: Verify access_token with Google
+    G->>BE: Return user info (email, name, picture, etc.)
+    BE->>DB: Check if user exists by google_id
+    alt User exists
+        BE->>DB: Update user info if needed
+    else User doesn't exist
+        BE->>DB: Create new user
+    end
+    BE->>BE: Generate JWT token
+    BE->>FE: Return JWT + user data
+    FE->>FE: Store JWT + user in localStorage
+    FE->>U: Show authenticated state

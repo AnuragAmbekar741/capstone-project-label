@@ -1,7 +1,10 @@
 import os
 from typing import List
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
+
+load_dotenv()
 class Settings(BaseModel):
     APP_NAME: str = "Capstone Project Label API"
     APP_VERSION: str = "1.0.0"

@@ -1,4 +1,5 @@
 # app/main.py
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
@@ -21,6 +22,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+print(f"JWT_SECRET_KEY loaded: {os.environ.get('JWT_SECRET_KEY')}")  
 
 # Register API routers
 app.include_router(google_auth.router)

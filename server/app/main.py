@@ -65,9 +65,6 @@ async def db_health_check():
 async def test():
     return {"message": "Test endpoint working!"}
 
-# @app.post("/auth/google")
-# async def google_auth(request: dict):
-#     return {"message": "Google auth endpoint - not implemented yet"}
 
 # Run the application
 if __name__ == "__main__":

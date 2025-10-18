@@ -28,4 +28,18 @@ apiClient.interceptors.response.use(
   }
 );
 
+/**
+ * Set the authorization token in the API client
+ */
+export const setAuthToken = (token: string) => {
+  apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+};
+
+/**
+ * Clear the authorization token from the API client
+ */
+export const clearAuthToken = () => {
+  delete apiClient.defaults.headers.common["Authorization"];
+};
+
 export default apiClient;

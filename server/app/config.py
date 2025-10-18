@@ -35,7 +35,7 @@ TORTOISE_ORM:dict = {
         },
         "apps":{
             "models": {
-                "models": ["app.api.models.user", "aerich.models"],
+                "models": ["app.models.user", "aerich.models"],
                 "default_connection": "default",
             }
         }

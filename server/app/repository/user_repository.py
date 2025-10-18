@@ -1,6 +1,6 @@
 from typing import Optional
 from tortoise.exceptions import DoesNotExist
-from app.api.models import User
+from app.models import User
 
 class UserRepository:
     """Simple repository for User model operations"""

@@ -1,13 +1,24 @@
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import Auth from "./views/auth/Auth";
+import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { ThemeProvider } from "@/context/ThemeContext";
+
+import { routeTree } from "./routeTree.gen";
+
+const router = createRouter({ routeTree });
+
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
 
 function App() {
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-      <div className="App">
-        <Auth />
-      </div>
-    </GoogleOAuthProvider>
+    <ThemeProvider defaultTheme="system" storageKey="ui-theme">
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+        <RouterProvider router={router} />
+      </GoogleOAuthProvider>
+    </ThemeProvider>
   );
 }
 

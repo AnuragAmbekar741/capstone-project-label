@@ -17,8 +17,12 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
+    const errorStatus = [401, 403, 404, 500, 502, 503, 504];
     // If 401 Unauthorized, clear auth and redirect to login
-    if (error.response?.status === 401) {
+    if (
+      error.response?.status &&
+      errorStatus.includes(error.response?.status)
+    ) {
       console.warn("Unauthorized - redirecting to login");
       localStorage.removeItem("jwt_token");
       localStorage.removeItem("user");

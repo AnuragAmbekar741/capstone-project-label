@@ -1,5 +1,4 @@
 # app/main.py
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
@@ -11,66 +10,95 @@ from app.config import settings, TORTOISE_ORM
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Simple FastAPI application"
+    description="Label - Email Organization API with Google OAuth",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# Add CORS middleware
+# CORS Configuration
+# Allows frontend to communicate with backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=settings.ALLOWED_ORIGINS,  # Frontend URL(s)
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
 )
 
-print(f"JWT_SECRET_KEY loaded: {os.environ.get('JWT_SECRET_KEY')}")  
+# ============================================================================
+# PUBLIC ROUTES (No authentication required)
+# ============================================================================
 
-# Register API routers
+# Authentication routes - /auth/google (public), /auth/me (protected)
 app.include_router(google_auth.router)
+
+# ============================================================================
+# PROTECTED ROUTES (Authentication required)
+# ============================================================================
+
+# When you create protected routers, add them here with dependencies:
+# from app.api.deps import get_current_user
+# from fastapi import Depends
+# from app.api.router import emails
+# app.include_router(emails.router, dependencies=[Depends(get_current_user)])
+
+# ============================================================================
+# DATABASE CONFIGURATION
+# ============================================================================
 
 # Register Tortoise ORM with database
 register_tortoise(
     app,
     config=TORTOISE_ORM,
-    generate_schemas=True,
-    add_exception_handlers=True
+    generate_schemas=True,  # Auto-create tables
+    add_exception_handlers=True,
 )
 
-# Root endpoint
-@app.get("/")
+# ============================================================================
+# HEALTH CHECK ENDPOINTS
+# ============================================================================
+
+@app.get("/", tags=["Root"])
 async def root():
+    """Root endpoint - API information"""
     return {
         "message": f"Welcome to {settings.APP_NAME}",
         "version": settings.APP_VERSION,
-        "status": "running"
+        "status": "running",
+        "docs": "/docs",
     }
 
-# Health check endpoint
-@app.get("/health")
+
+@app.get("/health", tags=["Health"])
 async def health_check():
+    """Basic health check endpoint"""
     return {"status": "healthy"}
 
-# Database health check
-@app.get("/health/db")
+
+@app.get("/health/db", tags=["Health"])
 async def db_health_check():
+    """Database connection health check"""
     from tortoise import Tortoise
     try:
         await Tortoise.get_connection("default").execute_query("SELECT 1")
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
-        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+        return {
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e),
+        }
 
-# Simple test endpoint
-@app.get("/test")
-async def test():
-    return {"message": "Test endpoint working!"}
 
+# ============================================================================
+# APPLICATION ENTRY POINT
+# ============================================================================
 
-# Run the application
 if __name__ == "__main__":
     uvicorn.run(
-        app,
+        "app.main:app",  # Use string format for better reload
         host=settings.HOST,
         port=settings.PORT,
-        reload=settings.DEBUG
+        reload=settings.DEBUG,
+        log_level="info",
     )

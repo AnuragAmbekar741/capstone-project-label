@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.services import google_auth_service 
 from app.api.utils.jwt import create_token, TokenType
 from app.repository.user_repository import UserRepository
@@ -18,6 +20,15 @@ class AuthResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "Bearer"
+
+class UserProfileResponse(BaseModel):
+    """User profile response"""
+    id: int
+    email: str
+    name: str
+    google_id: str
+    created_at: str
+    updated_at: str
 
 @router.post("/google", response_model=AuthResponse, status_code=status.HTTP_200_OK)
 async def google_login(request_data: GoogleLoginRequest):
@@ -92,3 +103,18 @@ async def google_login(request_data: GoogleLoginRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred during authentication: {str(e)}"
         )
+
+@router.get("/me", response_model=UserProfileResponse)
+async def get_current_user_profile(current_user: User = Depends(get_current_user)):
+    """
+    Get current authenticated user's profile
+    Requires: Bearer token in Authorization header
+    """
+    return UserProfileResponse(
+        id=current_user.id,
+        email=current_user.email,
+        name=current_user.name,
+        google_id=current_user.google_id,
+        created_at=current_user.created_at.isoformat(),
+        updated_at=current_user.updated_at.isoformat(),
+    )

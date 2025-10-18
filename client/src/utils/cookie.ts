@@ -1,20 +1,25 @@
 import Cookies from "js-cookie";
 
+// Only use secure cookies in production (HTTPS)
+const isProduction = import.meta.env.PROD;
+
 const COOKIE_OPTIONS = {
-  secure: true, // Only sent over HTTPS (set to false in dev if needed)
-  sameSite: "strict" as const, // CSRF protection
-  expires: 7, // 7 days
+  secure: isProduction, // false in dev, true in production
+  sameSite: "strict" as const,
+  expires: 7,
 };
 
 export const TokenCookies = {
   setAccessToken: (token: string) => {
+    console.log("🍪 Setting access token");
     Cookies.set("access_token", token, {
       ...COOKIE_OPTIONS,
-      expires: 1 / 48, // 30 minutes (1/48 of a day)
+      expires: 1 / 48, // 30 minutes
     });
   },
 
   setRefreshToken: (token: string) => {
+    console.log("🍪 Setting refresh token");
     Cookies.set("refresh_token", token, {
       ...COOKIE_OPTIONS,
       expires: 7, // 7 days
@@ -30,11 +35,14 @@ export const TokenCookies = {
   },
 
   clearTokens: () => {
+    console.log("🍪 Clearing tokens");
     Cookies.remove("access_token");
     Cookies.remove("refresh_token");
   },
 
   hasTokens: (): boolean => {
-    return !!Cookies.get("access_token");
+    const hasToken = !!Cookies.get("access_token");
+    console.log("🍪 Has tokens:", hasToken);
+    return hasToken;
   },
 };

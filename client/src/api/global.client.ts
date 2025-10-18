@@ -1,3 +1,4 @@
+import { TokenCookies } from "@/utils/cookie";
 import axios, { AxiosError, type AxiosInstance } from "axios";
 
 //Base API Configuration
@@ -14,19 +15,19 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// RESPONSE INTERCEPTOR - Handle ONLY 401 errors
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    const errorStatus = [401, 403, 404, 500, 502, 503, 504];
-    // If 401 Unauthorized, clear auth and redirect to login
-    if (
-      error.response?.status &&
-      errorStatus.includes(error.response?.status)
-    ) {
-      console.warn("Unauthorized - redirecting to login");
-      localStorage.removeItem("jwt_token");
-      localStorage.removeItem("user");
-      window.location.href = "/auth";
+    // ONLY handle 401 Unauthorized (not 404, 500, etc.)
+    if (error.response?.status && [401, 403].includes(error.response.status)) {
+      console.warn("❌ 401 Unauthorized - clearing tokens");
+      TokenCookies.clearTokens();
+
+      // Avoid redirect loop - only redirect if not already on auth page
+      if (!window.location.pathname.includes("/auth")) {
+        window.location.href = "/auth";
+      }
     }
     return Promise.reject(error);
   }

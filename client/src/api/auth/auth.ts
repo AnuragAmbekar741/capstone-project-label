@@ -32,3 +32,17 @@ export const googleLogin = async (
 export const getCurrentUser = async (): Promise<UserProfile> => {
   return await get<UserProfile>("/auth/me");
 };
+
+export interface RefreshTokenRequest {
+  refresh_token: string;
+}
+
+export const refreshAccessToken = async (
+  refreshToken: string
+): Promise<GoogleAuthResponse> => {
+  return await post<GoogleAuthResponse, RefreshTokenRequest>(
+    "/auth/refresh",
+    { refresh_token: refreshToken },
+    { sendToken: false }
+  );
+};

@@ -1,0 +1,22 @@
+[12:50:53] INFO: Logging to C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/train_emailsum_long_20251019_125053.log
+[12:50:53] INFO: Args: {'corpus_dir': 'C:/Users/kunal/Desktop/college/capstone/training/mail-data/', 'tmp_out_dir': 'runs/email_sum_cache', 'model_out_dir': 'C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/', 'version_mode': 'long', 'base_model': 'C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/final_model', 'max_input_len': 1024, 'epochs': 3, 'batch_size': 4, 'eval_batch_size': 4, 'grad_accum': 2, 'lr': 5e-05, 'warmup_steps': 1000, 'save_steps': 1000, 'eval_steps': 1000, 'grad_checkpoint': 'false', 'num_workers': 12, 'train': False, 'eval': False, 'test': True, 'limit_train': 0, 'limit_val': 0, 'limit_test': 0, 'use_lora': 'true', 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.05, 'seed': 42}
+[12:50:53] INFO: CUDA available: True | device_count=1
+Traceback (most recent call last):
+  File "C:\Users\kunal\Desktop\college\capstone\training\train.py", line 499, in <module>
+    run(args)
+  File "C:\Users\kunal\Desktop\college\capstone\training\train.py", line 285, in run
+    paths, max_out_len = build_datasets_emailsum(
+                         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kunal\Desktop\college\capstone\training\train.py", line 242, in build_datasets_emailsum
+    src, tgt = prepare_email_sum_files(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kunal\Desktop\college\capstone\training\train.py", line 173, in prepare_email_sum_files
+    src = join_thread_messages_email_sum(thr)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kunal\Desktop\college\capstone\training\train.py", line 82, in join_thread_messages_email_sum
+    txt = _nw(m.get("text") or m.get("body_text") or "")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kunal\Desktop\college\capstone\training\train.py", line 72, in _nw
+    def _nw(s: str) -> str: return WS.sub(" ", (s or "").strip())
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

@@ -1,0 +1,110 @@
+[14:53:31] INFO: Logging to C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/train_emailsum_long_20251019_145331.log
+[14:53:31] INFO: Args: {'corpus_dir': 'C:/Users/kunal/Desktop/college/capstone/training/mail-data/', 'tmp_out_dir': 'runs/email_sum_cache', 'model_out_dir': 'C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/', 'version_mode': 'long', 'base_model': 'C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/full_model', 'max_input_len': 1024, 'epochs': 3, 'batch_size': 4, 'eval_batch_size': 4, 'grad_accum': 2, 'lr': 5e-05, 'warmup_steps': 1000, 'save_steps': 1000, 'eval_steps': 1000, 'grad_checkpoint': 'false', 'num_workers': 12, 'train': False, 'eval': False, 'test': True, 'limit_train': 0, 'limit_val': 0, 'limit_test': 0, 'use_lora': 'true', 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.05, 'seed': 42}
+[14:53:31] INFO: CUDA available: True | device_count=1
+[14:53:43] INFO: Built train: 111260 examples
+[14:53:45] INFO: Built val: 8919 examples
+[14:53:47] INFO: Built test: 18107 examples
+loading file spiece.model
+loading file tokenizer.json
+loading file added_tokens.json
+loading file special_tokens_map.json
+loading file tokenizer_config.json
+loading file chat_template.jinja
+loading configuration file C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/full_model\config.json
+Model config T5Config {
+  "architectures": [
+    "T5ForConditionalGeneration"
+  ],
+  "classifier_dropout": 0.0,
+  "d_ff": 3072,
+  "d_kv": 64,
+  "d_model": 768,
+  "decoder_start_token_id": 0,
+  "dense_act_fn": "relu",
+  "dropout_rate": 0.1,
+  "dtype": "float16",
+  "eos_token_id": 1,
+  "feed_forward_proj": "relu",
+  "initializer_factor": 1.0,
+  "is_encoder_decoder": true,
+  "is_gated_act": false,
+  "layer_norm_epsilon": 1e-06,
+  "model_type": "t5",
+  "n_positions": 512,
+  "num_decoder_layers": 12,
+  "num_heads": 12,
+  "num_layers": 12,
+  "output_past": true,
+  "pad_token_id": 0,
+  "relative_attention_max_distance": 128,
+  "relative_attention_num_buckets": 32,
+  "task_specific_params": {
+    "summarization": {
+      "early_stopping": true,
+      "length_penalty": 2.0,
+      "max_length": 200,
+      "min_length": 30,
+      "no_repeat_ngram_size": 3,
+      "num_beams": 4,
+      "prefix": "summarize: "
+    },
+    "translation_en_to_de": {
+      "early_stopping": true,
+      "max_length": 300,
+      "num_beams": 4,
+      "prefix": "translate English to German: "
+    },
+    "translation_en_to_fr": {
+      "early_stopping": true,
+      "max_length": 300,
+      "num_beams": 4,
+      "prefix": "translate English to French: "
+    },
+    "translation_en_to_ro": {
+      "early_stopping": true,
+      "max_length": 300,
+      "num_beams": 4,
+      "prefix": "translate English to Romanian: "
+    }
+  },
+  "transformers_version": "4.57.0",
+  "use_cache": true,
+  "vocab_size": 32128
+}
+
+loading weights file C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/full_model\model.safetensors
+Generate config GenerationConfig {
+  "decoder_start_token_id": 0,
+  "eos_token_id": 1,
+  "pad_token_id": 0
+}
+
+loading configuration file C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/full_model\generation_config.json
+Generate config GenerationConfig {
+  "decoder_start_token_id": 0,
+  "eos_token_id": 1,
+  "pad_token_id": 0
+}
+
+Could not locate the custom_generate/generate.py inside C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/full_model.
+trainable params: 884,736 || all params: 223,788,288 || trainable%: 0.3953
+PyTorch: setting up devices
+C:\Users\kunal\Desktop\college\capstone\training\train.py:360: FutureWarning: `tokenizer` is deprecated and will be removed in version 5.0.0 for `Seq2SeqTrainer.__init__`. Use `processing_class` instead.
+  trainer = Seq2SeqTrainer(
+Traceback (most recent call last):
+  File "C:\Users\kunal\Desktop\college\capstone\training\train.py", line 503, in <module>
+    run(args)
+  File "C:\Users\kunal\Desktop\college\capstone\training\train.py", line 360, in run
+    trainer = Seq2SeqTrainer(
+              ^^^^^^^^^^^^^^^
+  File "C:\Users\kunal\AppData\Local\Programs\Python\Python311\Lib\site-packages\transformers\utils\deprecation.py", line 172, in wrapped_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kunal\AppData\Local\Programs\Python\Python311\Lib\site-packages\transformers\trainer_seq2seq.py", line 72, in __init__
+    super().__init__(
+  File "C:\Users\kunal\AppData\Local\Programs\Python\Python311\Lib\site-packages\transformers\utils\deprecation.py", line 172, in wrapped_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kunal\AppData\Local\Programs\Python\Python311\Lib\site-packages\transformers\trainer.py", line 440, in __init__
+    raise ValueError(
+ValueError: You have set `args.eval_strategy` to IntervalStrategy.STEPS but you didn't pass an `eval_dataset` to `Trainer`. Either set `args.eval_strategy` to `no` or pass an `eval_dataset`. 

@@ -1,0 +1,49 @@
+{
+  "rows_in": 517401,
+  "messages_kept": 508935,
+  "unique_threads": 133646,
+  "avg_msgs_per_thread": 3.81,
+  "empty_subject_msgs": 13367,
+  "top_senders": [
+    [
+      "kay.mann@enron.com",
+      16518
+    ],
+    [
+      "vince.kaminski@enron.com",
+      14183
+    ],
+    [
+      "jeff.dasovich@enron.com",
+      11113
+    ],
+    [
+      "pete.davis@enron.com",
+      9149
+    ],
+    [
+      "sara.shackleton@enron.com",
+      8769
+    ],
+    [
+      "enron.announcements@enron.com",
+      8587
+    ],
+    [
+      "chris.germany@enron.com",
+      8563
+    ],
+    [
+      "tana.jones@enron.com",
+      8410
+    ],
+    [
+      "steven.kean@enron.com",
+      6664
+    ],
+    [
+      "kate.symes@enron.com",
+      5409
+    ]
+  ]
+}

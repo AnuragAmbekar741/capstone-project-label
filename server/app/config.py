@@ -24,7 +24,7 @@ class Settings(BaseModel):
     JWT_SECRET_KEY: str = os.environ.get("JWT_SECRET_KEY")
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 60
     # Tortoise ORM Configuration
 
 settings = Settings()

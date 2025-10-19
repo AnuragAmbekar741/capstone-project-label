@@ -1,12 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { TokenCookies } from "@/utils/cookie";
+import { createFileRoute } from "@tanstack/react-router";
+import { requireAuth } from "@/utils/route-guards";
 import Dashboard from "@/views/dashboard/Dashboard";
 
 export const Route = createFileRoute("/dashboard")({
-  beforeLoad: async () => {
-    if (!TokenCookies.hasTokens()) {
-      throw redirect({ to: "/auth" });
-    }
-  },
+  beforeLoad: requireAuth,
   component: Dashboard,
 });

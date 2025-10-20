@@ -1,0 +1,8 @@
+[22:45:12] INFO: Logging to C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/train_emailsum_long_20251015_224512.log
+[22:45:12] INFO: Args: {'corpus_dir': 'C:/Users/kunal/Desktop/college/capstone/training/mail-data/', 'tmp_out_dir': 'runs/email_sum_cache', 'model_out_dir': 'C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/', 'version_mode': 'long', 'base_model': 't5-base', 'max_input_len': 1024, 'epochs': 3, 'batch_size': 4, 'eval_batch_size': 4, 'grad_accum': 2, 'lr': 5e-05, 'warmup_steps': 1000, 'save_steps': 1000, 'eval_steps': 1000, 'grad_checkpoint': 'false', 'num_workers': 12, 'train': True, 'eval': False, 'test': False, 'limit_train': 0, 'limit_val': 0, 'limit_test': 0, 'use_lora': 'true', 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.05, 'seed': 42}
+[22:45:12] INFO: CUDA available: True | device_count=1
+[22:45:24] INFO: Built train: 111260 examples
+[22:45:26] INFO: Built val: 8919 examples
+[22:45:28] INFO: Built test: 18107 examples
+[22:45:31] INFO: Resuming from checkpoint: C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/hf_ckpts\checkpoint-4000
+[04:33:17] INFO: Saved final model to C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/final_model

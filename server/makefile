@@ -32,3 +32,7 @@ migrate-gen:
 # Apply migrations to database
 migrate-up:
 	poetry run aerich upgrade
+
+git-profile:
+	git config --global user.name "AnuragAmbekar741"
+	git config --global user.email "anuragambekar1997@gmail.com"

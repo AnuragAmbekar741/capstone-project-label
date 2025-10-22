@@ -4,6 +4,7 @@ import Cookies from "js-cookie";
 const isProduction = import.meta.env.PROD;
 
 const COOKIE_OPTIONS = {
+  path: "/", // Make cookies accessible from all paths
   secure: isProduction, // false in dev, true in production
   sameSite: "strict" as const,
   expires: 7,
@@ -36,8 +37,8 @@ export const TokenCookies = {
 
   clearTokens: () => {
     console.log("🍪 Clearing tokens");
-    Cookies.remove("access_token");
-    Cookies.remove("refresh_token");
+    Cookies.remove("access_token", { path: "/" });
+    Cookies.remove("refresh_token", { path: "/" });
   },
 
   hasTokens: (): boolean => {

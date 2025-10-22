@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Inbox } from "lucide-react";
+import { Tag } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -23,12 +23,12 @@ export const AppSidebar: React.FC = () => {
   return (
     <Sidebar className="border-r">
       {/* Header */}
-      <SidebarHeader className="border-b px-6 py-4">
+      <SidebarHeader className="border-b px-6 py-3.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Inbox className="h-4 w-4" />
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Tag className="h-4 w-4" />
           </div>
-          <span className="text-lg font-semibold">Mail</span>
+          <span className="text-xl leading- font-light">LABEL</span>
         </div>
       </SidebarHeader>
 

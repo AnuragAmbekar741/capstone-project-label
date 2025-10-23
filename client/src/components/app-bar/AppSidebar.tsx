@@ -28,8 +28,8 @@ export const AppSidebar: React.FC = () => {
       {/* Header */}
       <SidebarHeader className="border-b px-6 py-3.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Tag className="h-4 w-4" />
+          <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-primary text-primary-foreground">
+            <Tag className="h-3 w-3" />
           </div>
           <span className="text-xl leading- font-light">LABEL</span>
         </div>

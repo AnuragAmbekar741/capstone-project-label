@@ -14,6 +14,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardSentRouteImport } from './routes/dashboard/sent'
 import { Route as DashboardJunkRouteImport } from './routes/dashboard/junk'
 import { Route as DashboardInboxRouteImport } from './routes/dashboard/inbox'
 import { Route as DashboardDraftRouteImport } from './routes/dashboard/draft'
@@ -43,6 +44,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardSentRoute = DashboardSentRouteImport.update({
+  id: '/sent',
+  path: '/sent',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardJunkRoute = DashboardJunkRouteImport.update({
   id: '/junk',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/draft': typeof DashboardDraftRoute
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/junk': typeof DashboardJunkRoute
+  '/dashboard/sent': typeof DashboardSentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/dashboard/draft': typeof DashboardDraftRoute
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/junk': typeof DashboardJunkRoute
+  '/dashboard/sent': typeof DashboardSentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/dashboard/draft': typeof DashboardDraftRoute
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/junk': typeof DashboardJunkRoute
+  '/dashboard/sent': typeof DashboardSentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/dashboard/draft'
     | '/dashboard/inbox'
     | '/dashboard/junk'
+    | '/dashboard/sent'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/dashboard/draft'
     | '/dashboard/inbox'
     | '/dashboard/junk'
+    | '/dashboard/sent'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/dashboard/draft'
     | '/dashboard/inbox'
     | '/dashboard/junk'
+    | '/dashboard/sent'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -180,6 +192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/sent': {
+      id: '/dashboard/sent'
+      path: '/sent'
+      fullPath: '/dashboard/sent'
+      preLoaderRoute: typeof DashboardSentRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/junk': {
       id: '/dashboard/junk'
       path: '/junk'
@@ -216,6 +235,7 @@ interface DashboardRouteChildren {
   DashboardDraftRoute: typeof DashboardDraftRoute
   DashboardInboxRoute: typeof DashboardInboxRoute
   DashboardJunkRoute: typeof DashboardJunkRoute
+  DashboardSentRoute: typeof DashboardSentRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
@@ -223,6 +243,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardDraftRoute: DashboardDraftRoute,
   DashboardInboxRoute: DashboardInboxRoute,
   DashboardJunkRoute: DashboardJunkRoute,
+  DashboardSentRoute: DashboardSentRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(

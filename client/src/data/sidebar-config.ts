@@ -1,11 +1,4 @@
-import {
-  Inbox,
-  File,
-  Send,
-  Trash,
-  Trash2,
-  type LucideIcon,
-} from "lucide-react";
+import { Inbox, File, Send, Trash, type LucideIcon } from "lucide-react";
 
 export interface MenuItem {
   id: string;
@@ -35,7 +28,7 @@ export const menuItems: MenuItem[] = [
     label: "Drafts",
     icon: File,
     count: 9,
-    href: "/dashboard/drafts",
+    href: "/dashboard/draft",
   },
   { id: "sent", label: "Sent", icon: Send, href: "/dashboard/sent" },
   {
@@ -45,7 +38,7 @@ export const menuItems: MenuItem[] = [
     count: 23,
     href: "/dashboard/junk",
   },
-  { id: "trash", label: "Trash", icon: Trash2, href: "/dashboard/trash" },
+  // { id: "trash", label: "Trash", icon: Trash2, href: "/dashboard/trash" },
   // {
   //   id: "archive",
   //   label: "Archive",

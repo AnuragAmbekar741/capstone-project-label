@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Tag } from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -19,14 +20,16 @@ import { menuItems, labels } from "@/data/sidebar-config";
 
 export const AppSidebar: React.FC = () => {
   const { data: user } = useCurrentUser();
+  const router = useRouterState();
+  const currentPath = router.location.pathname;
 
   return (
     <Sidebar className="border-r">
       {/* Header */}
       <SidebarHeader className="border-b px-6 py-3.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Tag className="h-4 w-4" />
+          <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-primary text-primary-foreground">
+            <Tag className="h-3 w-3" />
           </div>
           <span className="text-xl leading- font-light">LABEL</span>
         </div>
@@ -40,16 +43,20 @@ export const AppSidebar: React.FC = () => {
             <SidebarMenu>
               {menuItems.map((item) => {
                 const Icon = item.icon;
+                const isActive = currentPath === item.href;
+
                 return (
                   <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton isActive={item.isActive}>
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                      {item.count && (
-                        <Badge variant="secondary" className="ml-auto">
-                          {item.count}
-                        </Badge>
-                      )}
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link to={item.href}>
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                        {item.count && (
+                          <Badge variant="secondary" className="ml-auto">
+                            {item.count}
+                          </Badge>
+                        )}
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

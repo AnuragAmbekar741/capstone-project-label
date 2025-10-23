@@ -5,7 +5,7 @@ export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     // If user has tokens, go to dashboard, otherwise to landing
     if (TokenCookies.hasTokens()) {
-      throw redirect({ to: "/dashboard" });
+      throw redirect({ to: "/dashboard/inbox" });
     } else {
       throw redirect({ to: "/landing" });
     }

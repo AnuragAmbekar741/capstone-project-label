@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Tag } from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +20,8 @@ import { menuItems, labels } from "@/data/sidebar-config";
 
 export const AppSidebar: React.FC = () => {
   const { data: user } = useCurrentUser();
+  const router = useRouterState();
+  const currentPath = router.location.pathname;
 
   return (
     <Sidebar className="border-r">
@@ -40,16 +43,20 @@ export const AppSidebar: React.FC = () => {
             <SidebarMenu>
               {menuItems.map((item) => {
                 const Icon = item.icon;
+                const isActive = currentPath === item.href;
+
                 return (
                   <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton isActive={item.isActive}>
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
-                      {item.count && (
-                        <Badge variant="secondary" className="ml-auto">
-                          {item.count}
-                        </Badge>
-                      )}
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link to={item.href}>
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                        {item.count && (
+                          <Badge variant="secondary" className="ml-auto">
+                            {item.count}
+                          </Badge>
+                        )}
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );

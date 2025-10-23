@@ -13,7 +13,9 @@ import { Route as LandingRouteImport } from './routes/landing'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardJunkRouteImport } from './routes/dashboard/junk'
+import { Route as DashboardInboxRouteImport } from './routes/dashboard/inbox'
+import { Route as DashboardDraftRouteImport } from './routes/dashboard/draft'
 
 const LandingRoute = LandingRouteImport.update({
   id: '/landing',
@@ -35,9 +37,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DashboardJunkRoute = DashboardJunkRouteImport.update({
+  id: '/junk',
+  path: '/junk',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardInboxRoute = DashboardInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardDraftRoute = DashboardDraftRouteImport.update({
+  id: '/draft',
+  path: '/draft',
   getParentRoute: () => DashboardRoute,
 } as any)
 
@@ -46,13 +58,18 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/landing': typeof LandingRoute
-  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/draft': typeof DashboardDraftRoute
+  '/dashboard/inbox': typeof DashboardInboxRoute
+  '/dashboard/junk': typeof DashboardJunkRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/landing': typeof LandingRoute
-  '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/draft': typeof DashboardDraftRoute
+  '/dashboard/inbox': typeof DashboardInboxRoute
+  '/dashboard/junk': typeof DashboardJunkRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -60,14 +77,38 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/landing': typeof LandingRoute
-  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/draft': typeof DashboardDraftRoute
+  '/dashboard/inbox': typeof DashboardInboxRoute
+  '/dashboard/junk': typeof DashboardJunkRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/landing' | '/dashboard/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/landing'
+    | '/dashboard/draft'
+    | '/dashboard/inbox'
+    | '/dashboard/junk'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/landing' | '/dashboard'
-  id: '__root__' | '/' | '/auth' | '/dashboard' | '/landing' | '/dashboard/'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/landing'
+    | '/dashboard/draft'
+    | '/dashboard/inbox'
+    | '/dashboard/junk'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/landing'
+    | '/dashboard/draft'
+    | '/dashboard/inbox'
+    | '/dashboard/junk'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -107,22 +148,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard/': {
-      id: '/dashboard/'
-      path: '/'
-      fullPath: '/dashboard/'
-      preLoaderRoute: typeof DashboardIndexRouteImport
+    '/dashboard/junk': {
+      id: '/dashboard/junk'
+      path: '/junk'
+      fullPath: '/dashboard/junk'
+      preLoaderRoute: typeof DashboardJunkRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/inbox': {
+      id: '/dashboard/inbox'
+      path: '/inbox'
+      fullPath: '/dashboard/inbox'
+      preLoaderRoute: typeof DashboardInboxRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/draft': {
+      id: '/dashboard/draft'
+      path: '/draft'
+      fullPath: '/dashboard/draft'
+      preLoaderRoute: typeof DashboardDraftRouteImport
       parentRoute: typeof DashboardRoute
     }
   }
 }
 
 interface DashboardRouteChildren {
-  DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardDraftRoute: typeof DashboardDraftRoute
+  DashboardInboxRoute: typeof DashboardInboxRoute
+  DashboardJunkRoute: typeof DashboardJunkRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
-  DashboardIndexRoute: DashboardIndexRoute,
+  DashboardDraftRoute: DashboardDraftRoute,
+  DashboardInboxRoute: DashboardInboxRoute,
+  DashboardJunkRoute: DashboardJunkRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(

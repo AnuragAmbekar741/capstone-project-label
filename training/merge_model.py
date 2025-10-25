@@ -9,7 +9,7 @@ import torch
 def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base_model", default="t5-base", help="HF id or path of the original backbone (e.g., google/flan-t5-large)")
-    ap.add_argument("--adapter_dir", required=True, help="Folder with adapter_config.json (your trained LoRA)")--adpater
+    ap.add_argument("--adapter_dir", required=True, help="Folder with adapter_config.json (your trained LoRA)")
     ap.add_argument("--out_dir", required=True, help="Destination folder for the merged *full* model")
     ap.add_argument("--dtype", default="auto", choices=["auto","fp32","fp16","bf16"])
     return ap.parse_args()

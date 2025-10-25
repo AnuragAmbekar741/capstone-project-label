@@ -1,0 +1,19 @@
+{
+  "n_val": 8919,
+  "hf_metrics": {
+    "val_loss": 1.1317765712738037,
+    "val_model_preparation_time": 0.002,
+    "val_rouge1": 42.2632,
+    "val_rouge2": 35.4743,
+    "val_rougeL": 38.0899,
+    "val_rougeLsum": 38.0979,
+    "val_runtime": 4758.927,
+    "val_samples_per_second": 1.874,
+    "val_steps_per_second": 0.469
+  },
+  "rouge": {
+    "rouge1_f": 42.28,
+    "rouge2_f": 35.47,
+    "rougeL_f": 38.09
+  }
+}

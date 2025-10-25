@@ -1,0 +1,8 @@
+{
+	"n_test": 18107,
+	"rouge": {
+		"rouge1_f": 53.04,
+		"rouge2_f": 44.9,
+		"rougeL_f": 45.9
+	}
+}

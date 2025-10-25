@@ -3,7 +3,7 @@
 
 # python train.py --mails C:/Users/kunal/Desktop/college/capstone/jsonfiles/ --model_out_dir C:/Users/kunal/Desktop/college/capstone/model_tf_base/
 # accelerate launch train.py --corpus_dir "C:/Users/kunal/Desktop/college/capstone/training/mail-data/" --model_out_dir "C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/" --train
-# accelerate launch train.py --corpus_dir "C:/Users/kunal/Desktop/college/capstone/training/mail-data/" --model_out_dir "C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/" --base_model C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/final_model --version_mode long --test
+# accelerate launch train.py --corpus_dir "C:/Users/kunal/Desktop/college/capstone/training/mail-data/" --model_out_dir "C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/" --base_model C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/full_model --version_mode long --test
 
 """
 EmailSum-style training on Enron threads:
@@ -18,6 +18,7 @@ References:
 import os, sys, re, json, math, random, argparse, logging
 from datetime import datetime
 from typing import Dict, Any, Iterable, List, Tuple
+import numpy as np
 
 import torch
 from torch.utils.data import Dataset
@@ -26,6 +27,10 @@ from transformers import (
     AutoTokenizer, AutoModelForSeq2SeqLM,
     DataCollatorForSeq2Seq, Seq2SeqTrainer, Seq2SeqTrainingArguments, TrainerCallback
 )
+
+from transformers.trainer_utils import EvalPrediction
+import evaluate
+import traceback
 
 # Optional: PEFT (LoRA)
 try:
@@ -42,6 +47,8 @@ except Exception:
     EVAL_OK = False
 
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "true")
+
+rouge_metric = evaluate.load("rouge")
 
 # torch.set_num_threads(12)
 
@@ -188,6 +195,54 @@ def prepare_email_sum_files(threads_path: str,
     return src_path, (tgt_path if build_targets else "")
 
 
+
+def postprocess_text(preds, labels):
+    preds = [p.strip() for p in preds]
+    labels = [l.strip() for l in labels]
+    return preds, labels
+
+def build_compute_metrics(tokenizer):
+    pad_id = tokenizer.pad_token_id
+
+    def _postprocess_text(preds, labels):
+        preds = [p.strip() for p in preds]
+        labels = [l.strip() for l in labels]
+        return preds, labels
+
+    def compute_metrics(eval_pred: EvalPrediction):
+        preds, labels = eval_pred
+
+        # If model returned a tuple, take first element
+        if isinstance(preds, tuple):
+            preds = preds[0]
+
+        # Case 1: logits -> convert to token ids
+        # logits shape: (batch, seq_len, vocab)
+        if hasattr(preds, "ndim") and preds.ndim == 3:
+            preds = np.argmax(preds, axis=-1)
+
+        # Safety: replace any negative ids (shouldn't happen) with pad_id
+        preds = np.where(preds >= 0, preds, pad_id)
+
+        # Decode predictions
+        decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)
+
+        # Labels: replace -100 tokens with pad_id before decoding
+        labels = np.where(labels != -100, labels, pad_id)
+        decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
+
+        decoded_preds, decoded_labels = _postprocess_text(decoded_preds, decoded_labels)
+
+        result = rouge_metric.compute(
+            predictions=decoded_preds,
+            references=decoded_labels,
+            use_stemmer=True,
+        )
+        return {k: round(v * 100, 4) for k, v in result.items()}
+
+    return compute_metrics
+
+
 # ---------------------------
 # Dataset
 # ---------------------------
@@ -218,7 +273,7 @@ class EmailSumDataset(Dataset):
         enc["labels"] = lab
         return {k: torch.tensor(v) for k, v in enc.items()}
 
-
+'''
 # ---------------------------
 # Train / Eval / Test
 # ---------------------------
@@ -251,6 +306,38 @@ def build_datasets_emailsum(corpus_dir: str,
         paths[split] = (src, tgt)
 
     return paths, max_out
+'''
+
+def build_datasets_emailsum(corpus_dir: str,
+                            work_dir: str,
+                            version_mode: str,
+                            seed: int,
+                            use_gold_targets: bool,
+                            limit_train: int = 0,
+                            limit_val: int = 0,
+                            limit_test: int = 0):
+
+    if version_mode == "short":
+        max_out = 56
+    else:
+        version_mode = "long"
+        max_out = 128
+
+    paths = {}
+    limits = {"train": limit_train, "val": limit_val, "test": limit_test}
+    for split in ("train", "val", "test"):
+        tp = pick_split_paths(corpus_dir, split)
+        src, tgt = prepare_email_sum_files(
+            threads_path=tp,
+            out_dir=work_dir,
+            build_targets=True,
+            split_name=split,
+            seed=seed,
+            limit=limits[split],      # ←<<<<<<<< wire it through
+        )
+        paths[split] = (src, tgt)
+
+    return paths, max_out
 
 
 def compute_rouge(preds: List[str], refs: List[str]) -> Dict[str, float]:
@@ -259,6 +346,7 @@ def compute_rouge(preds: List[str], refs: List[str]) -> Dict[str, float]:
         return {}
     rouge = load_metric("rouge")
     res = rouge.compute(predictions=preds, references=refs, use_stemmer=True)
+    logging.info(res)
     return {
         "rouge1_f": round(res["rouge1"] * 100, 2),
         "rouge2_f": round(res["rouge2"] * 100, 2),
@@ -269,7 +357,8 @@ def compute_rouge(preds: List[str], refs: List[str]) -> Dict[str, float]:
 def run(args):
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_path = setup_logger(args.model_out_dir, f"train_emailsum_{args.version_mode}_{timestamp}.log")
+    log_dir = args.model_out_dir+"/logs"
+    log_path = setup_logger(log_dir, f"train_emailsum_{args.version_mode}_{timestamp}.log")
     log_file = open(log_path, "a", buffering=1, encoding="utf-8")
     logging.getLogger("transformers").addHandler(logging.FileHandler(log_path, mode="a", encoding="utf-8"))
     logging.getLogger("transformers").setLevel(logging.INFO)
@@ -296,6 +385,7 @@ def run(args):
     )
 
     tok = AutoTokenizer.from_pretrained(args.base_model, use_fast=True)
+    # tok = AutoTokenizer.from_pretrained(args.base_model)
     model = AutoModelForSeq2SeqLM.from_pretrained(args.base_model)
 
     if PEFT_OK and str(args.use_lora).lower() == "true":
@@ -333,11 +423,11 @@ def run(args):
         learning_rate=args.lr,
         warmup_steps=args.warmup_steps,
 
-        eval_strategy="steps",
+        eval_strategy="steps" if args.eval else "no",
         eval_steps=max(500, args.eval_steps),
         logging_steps=50,
 
-        save_strategy="steps",
+        save_strategy="steps" if args.eval else "no",
         save_steps=max(500, args.save_steps),
         save_total_limit=3,
         save_safetensors=True,
@@ -354,18 +444,20 @@ def run(args):
         gradient_checkpointing=(str(args.grad_checkpoint).lower() == "true"),
         load_best_model_at_end=True,
         metric_for_best_model="loss",
-        greater_is_better=False,
+        greater_is_better=False
     )
 
     trainer = Seq2SeqTrainer(
         model=model,
         args=training_args,
         train_dataset=train_ds if args.train else None,
-        eval_dataset=val_ds if (args.train or args.eval) else None,
+        # eval_dataset=val_ds if (args.train or args.eval) else None,
+        eval_dataset = val_ds if args.eval else None,
         data_collator=data_collator,
-        tokenizer=tok
+        tokenizer=tok,
+        compute_metrics=build_compute_metrics(tok)
     )
-
+    logging.info("Trainer created")
     # 3) Train (resume if a ckpt exists)
     if args.train:
         ckpt_dir = training_args.output_dir
@@ -397,10 +489,20 @@ def run(args):
         logging.info("Evaluating on validation set…")
         # Avoid very long/VRAM-heavy gen in eval; we already set generation_max_length
         out = trainer.predict(val_ds, metric_key_prefix="val")
+        logging.info(f"output of prediction : {out}")
+        print(type(out.predictions), getattr(out.predictions, "shape", None), getattr(out.predictions, "dtype", None))
         metrics = {}
         if EVAL_OK:
-            preds = tok.batch_decode(out.predictions, skip_special_tokens=True)
-            refs = [t for t in val_ds.targets]
+            pred_ids = out.predictions
+            if isinstance(pred_ids, tuple):
+                pred_ids = pred_ids[0]
+            pred_ids = np.where(pred_ids != -100, pred_ids, tok.pad_token_id)
+            # preds = tok.batch_decode(out.predictions, skip_special_tokens=True)
+            preds = tok.batch_decode(pred_ids, skip_special_tokens=True)
+            # refs
+            label_ids = np.where(out.label_ids != -100, out.label_ids, tok.pad_token_id)
+            refs = tok.batch_decode(label_ids, skip_special_tokens=True)
+            # refs = [t for t in val_ds.targets]
             metrics = compute_rouge(preds, refs)
             logging.info("VAL ROUGE: %s", metrics)
         eval_report = {
@@ -500,4 +602,8 @@ if __name__ == "__main__":
     args = parse_args()
     os.makedirs(args.tmp_out_dir, exist_ok=True)
     os.makedirs(args.model_out_dir, exist_ok=True)
-    run(args)
+    try:
+        run(args)
+    except Exception as e:
+        traceback.print_exc()
+

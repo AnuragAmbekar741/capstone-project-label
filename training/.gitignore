@@ -4,3 +4,8 @@ model_tf_base/full_model/
 /model_tf_base_test/
 /model_tf_large/
 /runs/
+
+*.zip
+*/.vscode/*
+*.log
+*workspace*

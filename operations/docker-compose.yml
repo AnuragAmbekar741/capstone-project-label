@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  api:
+    build: ./service/api
+    env_file: .env
+    ports: ["8080:8080"]
+    depends_on: [model]
+    environment:
+      MODEL_URL: http://model:8000
+    restart: unless-stopped
+
+  model:
+    build: ./service/model
+    env_file: .env
+    expose: ["8000"]
+    volumes:
+      - C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/full_model:/models/full:ro
+      - C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/final_model:/adapters
+    environment:
+      FULL_MODEL_DIR: /models/full
+      ADAPTERS_ROOT: /adapters
+      DEVICE_MAP: auto
+      DTYPE: bfloat16
+      # Enable one (optional) for constrained boxes:
+      LOAD_IN_8BIT: "true"
+      # LOAD_IN_4BIT: "true"
+    restart: no
+
+  tuning:
+    build: ./service/tuning
+    env_file: .env
+    depends_on: [redis]
+    volumes:
+      - C:/Users/kunal/Desktop/college/capstone/training/model_tf_base/final_model:/adapters
+    environment:
+      ADAPTERS_ROOT: /adapters
+      JOB_QUEUE: fine_tune
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+# volumes:
+  # using bind mounts above for clarity; switch to named volumes in prod if preferred

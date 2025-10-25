@@ -12,7 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardSentRouteImport } from './routes/dashboard/sent'
+import { Route as DashboardJunkRouteImport } from './routes/dashboard/junk'
+import { Route as DashboardInboxRouteImport } from './routes/dashboard/inbox'
+import { Route as DashboardDraftRouteImport } from './routes/dashboard/draft'
+import { Route as DashboardSplatRouteImport } from './routes/dashboard/$'
 
 const LandingRoute = LandingRouteImport.update({
   id: '/landing',
@@ -29,43 +35,123 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardSentRoute = DashboardSentRouteImport.update({
+  id: '/sent',
+  path: '/sent',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardJunkRoute = DashboardJunkRouteImport.update({
+  id: '/junk',
+  path: '/junk',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardInboxRoute = DashboardInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardDraftRoute = DashboardDraftRouteImport.update({
+  id: '/draft',
+  path: '/draft',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSplatRoute = DashboardSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/landing': typeof LandingRoute
+  '/dashboard/$': typeof DashboardSplatRoute
+  '/dashboard/draft': typeof DashboardDraftRoute
+  '/dashboard/inbox': typeof DashboardInboxRoute
+  '/dashboard/junk': typeof DashboardJunkRoute
+  '/dashboard/sent': typeof DashboardSentRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/landing': typeof LandingRoute
+  '/dashboard/$': typeof DashboardSplatRoute
+  '/dashboard/draft': typeof DashboardDraftRoute
+  '/dashboard/inbox': typeof DashboardInboxRoute
+  '/dashboard/junk': typeof DashboardJunkRoute
+  '/dashboard/sent': typeof DashboardSentRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/auth': typeof AuthRoute
-  '/dashboard': typeof DashboardRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/landing': typeof LandingRoute
+  '/dashboard/$': typeof DashboardSplatRoute
+  '/dashboard/draft': typeof DashboardDraftRoute
+  '/dashboard/inbox': typeof DashboardInboxRoute
+  '/dashboard/junk': typeof DashboardJunkRoute
+  '/dashboard/sent': typeof DashboardSentRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/landing'
+  fullPaths:
+    | '/'
+    | '/$'
+    | '/auth'
+    | '/dashboard'
+    | '/landing'
+    | '/dashboard/$'
+    | '/dashboard/draft'
+    | '/dashboard/inbox'
+    | '/dashboard/junk'
+    | '/dashboard/sent'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/landing'
-  id: '__root__' | '/' | '/auth' | '/dashboard' | '/landing'
+  to:
+    | '/'
+    | '/$'
+    | '/auth'
+    | '/dashboard'
+    | '/landing'
+    | '/dashboard/$'
+    | '/dashboard/draft'
+    | '/dashboard/inbox'
+    | '/dashboard/junk'
+    | '/dashboard/sent'
+  id:
+    | '__root__'
+    | '/'
+    | '/$'
+    | '/auth'
+    | '/dashboard'
+    | '/landing'
+    | '/dashboard/$'
+    | '/dashboard/draft'
+    | '/dashboard/inbox'
+    | '/dashboard/junk'
+    | '/dashboard/sent'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SplatRoute: typeof SplatRoute
   AuthRoute: typeof AuthRoute
-  DashboardRoute: typeof DashboardRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   LandingRoute: typeof LandingRoute
 }
 
@@ -92,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -99,13 +192,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/sent': {
+      id: '/dashboard/sent'
+      path: '/sent'
+      fullPath: '/dashboard/sent'
+      preLoaderRoute: typeof DashboardSentRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/junk': {
+      id: '/dashboard/junk'
+      path: '/junk'
+      fullPath: '/dashboard/junk'
+      preLoaderRoute: typeof DashboardJunkRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/inbox': {
+      id: '/dashboard/inbox'
+      path: '/inbox'
+      fullPath: '/dashboard/inbox'
+      preLoaderRoute: typeof DashboardInboxRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/draft': {
+      id: '/dashboard/draft'
+      path: '/draft'
+      fullPath: '/dashboard/draft'
+      preLoaderRoute: typeof DashboardDraftRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/$': {
+      id: '/dashboard/$'
+      path: '/$'
+      fullPath: '/dashboard/$'
+      preLoaderRoute: typeof DashboardSplatRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardSplatRoute: typeof DashboardSplatRoute
+  DashboardDraftRoute: typeof DashboardDraftRoute
+  DashboardInboxRoute: typeof DashboardInboxRoute
+  DashboardJunkRoute: typeof DashboardJunkRoute
+  DashboardSentRoute: typeof DashboardSentRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardSplatRoute: DashboardSplatRoute,
+  DashboardDraftRoute: DashboardDraftRoute,
+  DashboardInboxRoute: DashboardInboxRoute,
+  DashboardJunkRoute: DashboardJunkRoute,
+  DashboardSentRoute: DashboardSentRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SplatRoute: SplatRoute,
   AuthRoute: AuthRoute,
-  DashboardRoute: DashboardRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   LandingRoute: LandingRoute,
 }
 export const routeTree = rootRouteImport

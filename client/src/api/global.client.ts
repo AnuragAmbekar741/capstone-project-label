@@ -20,6 +20,19 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// Initialize Authorization header if access token exists in cookies
+const initializeAuth = () => {
+  const accessToken = TokenCookies.getAccessToken();
+  if (accessToken) {
+    apiClient.defaults.headers.common["Authorization"] =
+      `Bearer ${accessToken}`;
+    console.log("✅ Authorization header initialized from cookies");
+  }
+};
+
+// Run on module load
+initializeAuth();
+
 // Flag to prevent multiple simultaneous refresh requests
 let isRefreshing = false;
 let refreshPromise: Promise<string> | null = null;

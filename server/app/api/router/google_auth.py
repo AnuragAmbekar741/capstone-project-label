@@ -1,3 +1,4 @@
+from uuid import UUID
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from app.api.deps import get_current_user
@@ -23,9 +24,10 @@ class AuthResponse(BaseModel):
 
 class UserProfileResponse(BaseModel):
     """User profile response"""
-    id: int
+    id: UUID
     email: str
     name: str
+    profile_picture: str | None
     google_id: str
     created_at: str
     updated_at: str
@@ -80,7 +82,8 @@ async def google_login(request_data: GoogleLoginRequest):
             "sub": str(user.id),
             "email": user.email,
             "google_id": user.google_id,
-            "name": user.name
+            "name": user.name,
+            "profile_picture": user.profile_picture
         }
         
         access_token = create_token(token_data, token_type=TokenType.ACCESS)
@@ -214,6 +217,7 @@ async def get_current_user_profile(current_user: User = Depends(get_current_user
         email=current_user.email,
         name=current_user.name,
         google_id=current_user.google_id,
+        profile_picture=current_user.profile_picture,
         created_at=current_user.created_at.isoformat(),
         updated_at=current_user.updated_at.isoformat(),
     )

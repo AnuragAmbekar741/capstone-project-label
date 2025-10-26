@@ -4,18 +4,19 @@ from tortoise import BaseDBAsyncClient
 async def upgrade(db: BaseDBAsyncClient) -> str:
     return """
         CREATE TABLE IF NOT EXISTS "users" (
-    "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    "id" UUID NOT NULL PRIMARY KEY,
+    "profile_picture" TEXT,
     "google_id" VARCHAR(255) NOT NULL UNIQUE,
     "name" VARCHAR(100) NOT NULL,
     "email" VARCHAR(255) NOT NULL UNIQUE,
-    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS "aerich" (
-    "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    "id" SERIAL NOT NULL PRIMARY KEY,
     "version" VARCHAR(255) NOT NULL,
     "app" VARCHAR(100) NOT NULL,
-    "content" JSON NOT NULL
+    "content" JSONB NOT NULL
 );"""
 
 

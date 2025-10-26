@@ -26,6 +26,8 @@ google-auth = "^2.41.1"
 pyjwt = "^2.10.1"
 requests = "^2.32.5"
 httpx = "^0.28.1"
+google-auth-oauthlib = "^1.2.2"
+imapclient = "^3.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"

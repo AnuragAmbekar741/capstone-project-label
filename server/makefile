@@ -27,7 +27,8 @@ migrate-init:
 
 # Generate migration for model changes
 migrate-gen:
-	poetry run aerich init-db
+	poetry run aerich migrate
+
 
 # Apply migrations to database
 migrate-up:

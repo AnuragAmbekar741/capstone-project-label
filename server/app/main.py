@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 import uvicorn
 from app.api.router import google_auth
+from app.api.router import gmail_oauth
 from app.config import settings, TORTOISE_ORM
 
 # Create FastAPI application
@@ -31,6 +32,9 @@ app.add_middleware(
 
 # Authentication routes - /auth/google (public), /auth/me (protected)
 app.include_router(google_auth.router)
+
+# Gmail OAuth Test Routes (TEMPORARY - for testing)
+app.include_router(gmail_oauth.router)  # ← Add this line
 
 # ============================================================================
 # PROTECTED ROUTES (Authentication required)

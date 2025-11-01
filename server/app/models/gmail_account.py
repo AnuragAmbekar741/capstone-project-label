@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from tortoise.models import Model
 from tortoise import fields
 import uuid
@@ -39,13 +39,15 @@ class GmailAccount(Model):
     # Helper properties
     @property
     def needs_refresh(self) -> bool:
-        """Check if token needs refresh (within 5 minutes of expiry)"""
-        return self.token_expiry < datetime.now() + timedelta(minutes=2)
+        """Check if token needs refresh (within 2 minutes of expiry)"""
+        now = datetime.now(timezone.utc)
+        return self.token_expiry < now + timedelta(minutes=2)
     
     @property
     def is_expired(self) -> bool:
         """Check if token is already expired"""
-        return self.token_expiry < datetime.now()
+        now = datetime.now(timezone.utc)
+        return self.token_expiry < now
     
     @property
     def get_refresh_token(self) -> str | None:

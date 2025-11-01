@@ -1,0 +1,365 @@
+from imapclient import IMAPClient
+from typing import List, Dict, Any, Optional
+import logging
+import email
+import base64
+from email.header import decode_header
+from app.services.base.imap_service import (
+    GmailImapServiceBase,
+    EmailMessage,
+    FolderInfo
+)
+
+logger = logging.getLogger(__name__)
+
+class GmailImapService(GmailImapServiceBase):
+    """
+    Gmail IMAP service implementation using imapclient
+    Uses XOAUTH2 authentication with OAuth access tokens
+    """
+    
+    def __init__(self):
+        self.client: Optional[IMAPClient] = None
+        self.access_token: Optional[str] = None
+        self.email_address: Optional[str] = None
+    
+    def _create_oauth2_string(self, email: str, access_token: str) -> str:
+        """
+        Create XOAUTH2 authentication string
+        Format: user=email\1auth=Bearer token\1\1
+        Then base64 encode it
+        """
+        auth_string = f"user={email}\x01auth=Bearer {access_token}\x01\x01"
+        # Base64 encode the auth string
+        auth_string_b64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+        return auth_string_b64
+    
+    async def connect(self, access_token: str, email_address: str) -> bool:
+        """
+        Connect to Gmail IMAP server using XOAUTH2
+        
+        Args:
+            access_token: OAuth access token
+            email_address: User's email address
+            
+        Returns:
+            True if connected successfully
+        """
+        try:
+            self.access_token = access_token
+            self.email_address = email_address
+            
+            logger.info(f"🔌 Connecting to Gmail IMAP for {email_address}")
+            
+            # Validate inputs
+            if not access_token:
+                raise ValueError("Access token is empty")
+            if not email_address:
+                raise ValueError("Email address is empty")
+            
+            logger.debug(f"📧 Email: {email_address}")
+            logger.debug(f"�� Token length: {len(access_token)}")
+            logger.debug(f"🔑 Token preview: {access_token[:30]}...")
+            
+            host = 'imap.gmail.com'
+            port = 993
+            
+            # Connect to IMAP server
+            logger.info(f"📡 Connecting to {host}:{port}")
+            self.client = IMAPClient(host, port=port, use_uid=True, ssl=True)
+            logger.info("✅ IMAP TCP connection established")
+            
+            # Check capabilities
+            try:
+                caps = self.client.capabilities()
+                logger.debug(f"📋 Server capabilities: {caps}")
+                if b'AUTH=XOAUTH2' not in caps:
+                    logger.warning("⚠️  Server may not support XOAUTH2")
+            except Exception as e:
+                logger.warning(f"⚠️  Could not check capabilities: {e}")
+            
+            # Try oauth2_login first if it exists
+            if hasattr(self.client, 'oauth2_login'):
+                logger.info("�� Attempting oauth2_login() method...")
+                try:
+                    self.client.oauth2_login(email_address, access_token)
+                    logger.info(f"✅ Successfully authenticated using oauth2_login()")
+                    return True
+                except AttributeError:
+                    logger.warning("⚠️  oauth2_login() not available, using manual XOAUTH2")
+                except Exception as e:
+                    logger.error(f"❌ oauth2_login() failed: {e}")
+                    logger.info("🔄 Falling back to manual XOAUTH2...")
+            
+            # Manual XOAUTH2 implementation
+            logger.info("�� Starting manual XOAUTH2 authentication...")
+            
+            # Create auth string (NO base64 encoding yet - imaplib does it internally)
+            auth_string = f"user={email_address}\x01auth=Bearer {access_token}\x01\x01"
+            logger.debug(f"📝 Raw auth string length: {len(auth_string)}")
+            logger.debug(f"📝 Raw auth string (first 80 chars repr): {repr(auth_string[:80])}")
+            
+            # For imaplib.authenticate(), the lambda should return the STRING (not base64)
+            # imaplib will base64 encode it internally
+            def oauth2_auth_handler(challenge):
+                logger.debug(f"📨 Server challenge received: {challenge}")
+                logger.debug(f"�� Returning raw auth string (imaplib will base64 it)")
+                # Return raw string - imaplib handles base64 encoding
+                return auth_string
+            
+            logger.info("🔐 Calling _imap.authenticate('XOAUTH2', handler)...")
+            self.client._imap.authenticate('XOAUTH2', oauth2_auth_handler)
+            logger.info(f"✅ Successfully authenticated to Gmail IMAP for {email_address}")
+            return True
+            
+        except AttributeError as e:
+            logger.error(f"❌ Attribute error - method not found: {e}")
+            if self.client:
+                logger.error(f"❌ Available methods: {[m for m in dir(self.client) if not m.startswith('_')]}")
+            self.client = None
+            return False
+        except Exception as e:
+            logger.error(f"❌ Failed to connect to Gmail IMAP: {type(e).__name__}: {e}")
+            logger.error(f"❌ Full error traceback:", exc_info=True)
+            self.client = None
+            return False
+    
+    async def disconnect(self):
+        """Disconnect from IMAP server"""
+        if self.client:
+            try:
+                self.client.logout()
+                self.client = None
+                logger.info("Disconnected from Gmail IMAP")
+            except Exception as e:
+                logger.error(f"Error disconnecting from IMAP: {e}")
+    
+    async def list_folders(self) -> List[FolderInfo]:
+        """List all folders/labels"""
+        if not self.client:
+            raise ValueError("Not connected to IMAP server")
+        
+        try:
+            folders = self.client.list_folders()
+            folder_info_list = []
+            
+            for flags, delimiter, name in folders:
+                folder_info = FolderInfo(
+                    name=name.decode('utf-8') if isinstance(name, bytes) else name,
+                    flags=[f.decode('utf-8') if isinstance(f, bytes) else f for f in flags],
+                    delimiter=delimiter.decode('utf-8') if isinstance(delimiter, bytes) else delimiter
+                )
+                folder_info_list.append(folder_info)
+            
+            return folder_info_list
+            
+        except Exception as e:
+            logger.error(f"Failed to list folders: {e}")
+            raise
+    
+    async def fetch_emails(
+        self,
+        folder: str = 'INBOX',
+        limit: int = 50,
+        since_date: Optional[str] = None
+    ) -> List[EmailMessage]:
+        """Fetch emails from a folder"""
+        if not self.client:
+            raise ValueError("Not connected to IMAP server")
+        
+        try:
+            # Select folder
+            self.client.select_folder(folder)
+            
+            # Build search criteria
+            search_criteria = ['ALL']
+            if since_date:
+                # Format: (SINCE "01-Jan-2024")
+                search_criteria = [f'SINCE "{since_date}"']
+            
+            # Search for emails
+            uids = self.client.search(search_criteria)
+            
+            # Limit results (most recent first)
+            if len(uids) > limit:
+                uids = uids[-limit:]
+            
+            # Fetch emails
+            messages = self.client.fetch(uids, ['RFC822', 'FLAGS', 'ENVELOPE'])
+            
+            email_list = []
+            for uid, data in messages.items():
+                try:
+                    email_msg = self._parse_email(uid, data)
+                    email_list.append(email_msg)
+                except Exception as e:
+                    logger.error(f"Failed to parse email {uid}: {e}")
+                    continue
+            
+            return email_list
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch emails: {e}")
+            raise
+    
+    async def search_emails(
+        self,
+        query: str,
+        folder: str = 'INBOX',
+        limit: int = 50
+    ) -> List[EmailMessage]:
+        """Search emails using Gmail search syntax"""
+        if not self.client:
+            raise ValueError("Not connected to IMAP server")
+        
+        try:
+            # Select folder
+            self.client.select_folder(folder)
+            
+            # Gmail supports X-GM-RAW for advanced search
+            # Format: X-GM-RAW "search query"
+            search_criteria = ['X-GM-RAW', f'"{query}"']
+            
+            # Search
+            uids = self.client.search(search_criteria)
+            
+            # Limit results
+            if len(uids) > limit:
+                uids = uids[-limit:]
+            
+            # Fetch emails
+            messages = self.client.fetch(uids, ['RFC822', 'FLAGS', 'ENVELOPE'])
+            
+            email_list = []
+            for uid, data in messages.items():
+                try:
+                    email_msg = self._parse_email(uid, data)
+                    email_list.append(email_msg)
+                except Exception as e:
+                    logger.error(f"Failed to parse email {uid}: {e}")
+                    continue
+            
+            return email_list
+            
+        except Exception as e:
+            logger.error(f"Failed to search emails: {e}")
+            raise
+    
+    async def add_label(self, uid: int, label: str, folder: str = 'INBOX') -> bool:
+        """Add label to email"""
+        if not self.client:
+            raise ValueError("Not connected to IMAP server")
+        
+        try:
+            self.client.select_folder(folder)
+            self.client.add_gmail_labels(uid, label)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to add label {label} to email {uid}: {e}")
+            return False
+    
+    async def remove_label(self, uid: int, label: str, folder: str = 'INBOX') -> bool:
+        """Remove label from email"""
+        if not self.client:
+            raise ValueError("Not connected to IMAP server")
+        
+        try:
+            self.client.select_folder(folder)
+            self.client.remove_gmail_labels(uid, label)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to remove label {label} from email {uid}: {e}")
+            return False
+    
+    async def delete_email(self, uid: int, folder: str = 'INBOX') -> bool:
+        """Delete an email"""
+        if not self.client:
+            raise ValueError("Not connected to IMAP server")
+        
+        try:
+            self.client.select_folder(folder)
+            # Add Deleted flag and expunge
+            self.client.set_flags(uid, [b'\\Deleted'])
+            self.client.expunge()
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete email {uid}: {e}")
+            return False
+    
+    def _parse_email(self, uid: int, data: Dict) -> EmailMessage:
+        """Parse IMAP email data into EmailMessage"""
+        try:
+            # Parse RFC822 message
+            msg_data = data[b'RFC822']
+            msg = email.message_from_bytes(msg_data)
+            
+            # Decode headers
+            subject = self._decode_header(msg.get('Subject', ''))
+            from_addr = self._decode_header(msg.get('From', ''))
+            to_addrs = [self._decode_header(addr) for addr in msg.get_all('To', [])]
+            date_str = msg.get('Date', '')
+            
+            # Extract body
+            body_text = None
+            body_html = None
+            
+            if msg.is_multipart():
+                for part in msg.walk():
+                    content_type = part.get_content_type()
+                    if content_type == 'text/plain' and not body_text:
+                        body_text = part.get_payload(decode=True).decode('utf-8', errors='ignore')
+                    elif content_type == 'text/html' and not body_html:
+                        body_html = part.get_payload(decode=True).decode('utf-8', errors='ignore')
+            else:
+                content_type = msg.get_content_type()
+                payload = msg.get_payload(decode=True)
+                if payload:
+                    body_text = payload.decode('utf-8', errors='ignore')
+            
+            # Extract labels/flags
+            flags = data.get(b'FLAGS', [])
+            labels = [f.decode('utf-8') for f in flags if isinstance(f, bytes)]
+            
+            # Extract attachments (simplified)
+            attachments = []
+            if msg.is_multipart():
+                for part in msg.walk():
+                    if part.get_content_disposition() == 'attachment':
+                        attachments.append({
+                            'filename': part.get_filename(),
+                            'content_type': part.get_content_type(),
+                            'size': len(part.get_payload(decode=True) or b'')
+                        })
+            
+            return EmailMessage(
+                uid=uid,
+                subject=subject,
+                from_address=from_addr,
+                to_addresses=to_addrs,
+                date=date_str,
+                body_text=body_text,
+                body_html=body_html,
+                labels=labels,
+                attachments=attachments
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to parse email: {e}")
+            raise
+    
+    def _decode_header(self, header: str) -> str:
+        """Decode email header"""
+        if not header:
+            return ''
+        
+        try:
+            decoded_parts = decode_header(header)
+            decoded_str = ''
+            for part, encoding in decoded_parts:
+                if isinstance(part, bytes):
+                    decoded_str += part.decode(encoding or 'utf-8', errors='ignore')
+                else:
+                    decoded_str += part
+            return decoded_str
+        except Exception:
+            return str(header)

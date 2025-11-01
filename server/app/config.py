@@ -21,7 +21,12 @@ class Settings(BaseModel):
     GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET")
 
     GMAIL_REDIRECT_URI: str = os.environ.get("GMAIL_REDIRECT_URI")
-    GMAIL_SCOPES: List[str] = ["https://mail.google.com/"]
+    GMAIL_SCOPES: List[str] = [
+        "https://mail.google.com/",
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile"
+    ]
 
     # JWT Configuration
     JWT_SECRET_KEY: str = os.environ.get("JWT_SECRET_KEY")

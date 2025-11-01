@@ -33,6 +33,11 @@ class GmailAccountRepository:
     async def get_gmail_account_by_id(account_id: UUID) -> GmailAccount | None:
         """Get Gmail account by ID"""
         return await GmailAccount.get_or_none(id=account_id)
+    
+    @staticmethod
+    async def get_gmail_account_by_email(email_address: str) -> GmailAccount | None:
+        """Get Gmail account by email address"""
+        return await GmailAccount.get_or_none(email_address=email_address)
 
     @staticmethod
     async def update_tokens(

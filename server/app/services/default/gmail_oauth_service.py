@@ -24,15 +24,9 @@ class GmailOAuthService(GmailOAuthServiceBase):
         if not all([self.client_id, self.client_secret, self.redirect_uri]):
             logger.warning("Gmail OAuth credentials not fully configured")
     
-    def _create_flow(self, state: Optional[str] = None) -> Flow:
+    def _create_flow(self) -> Flow:
         """
         Create OAuth flow instance
-        
-        Args:
-            state: Optional state parameter
-            
-        Returns:
-            Configured Flow instance
         """
         client_config = {
             "web": {
@@ -49,48 +43,42 @@ class GmailOAuthService(GmailOAuthServiceBase):
             scopes=self.scopes,
             redirect_uri=self.redirect_uri
         )
-        
-        if state:
-            flow.state = state
-        
+
         return flow
     
     def get_auth_url(self, state: Optional[str] = None) -> str:
         """
         Generate OAuth authorization URL
-        
-        Args:
-            state: Optional state parameter (typically user ID for CSRF protection)
-            
-        Returns:
-            Authorization URL string
         """
         try:
-            flow = self._create_flow(state)
+            flow = self._create_flow()
             
             # Generate authorization URL with offline access to get refresh token
-            authorization_url, _ = flow.authorization_url(
-                access_type='offline',  # Required to get refresh_token
+            authorization_url,returned_state = flow.authorization_url(
+                access_type='offline',
                 include_granted_scopes='true',
-                prompt='consent'  # Force consent screen to ensure refresh_token
+                prompt='consent',
+                state=state
             )
-            
-            logger.info(f"Generated Gmail OAuth URL for state: {state}")
+
+            if state:
+                from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+                parsed = urlparse(authorization_url)
+                query_params = parse_qs(parsed.query)
+                query_params['state'] = [state]
+                new_query = urlencode(query_params, doseq=True)
+                authorization_url = urlunparse(
+                    (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
+                )
             return authorization_url
-            
+
         except Exception as e:
             logger.error(f"Failed to generate Gmail OAuth URL: {e}")
             raise ValueError(f"Failed to generate authorization URL: {str(e)}")
-    
+
     def exchange_tokens(self, code: str) -> Dict[str, Any]:
         """
         Exchange authorization code for tokens
-        
-        Args:
-            code: Authorization code from OAuth callback
-            
-        Returns:
-            Dictionary with tokens and metadata
         """
         try:
             flow = self._create_flow()
@@ -152,6 +140,7 @@ class GmailOAuthService(GmailOAuthServiceBase):
         except Exception as e:
             logger.error(f"Failed to refresh access token: {e}")
             raise ValueError(f"Failed to refresh access token: {str(e)}")
+
 
 # Singleton instance
 gmail_oauth_service = GmailOAuthService()

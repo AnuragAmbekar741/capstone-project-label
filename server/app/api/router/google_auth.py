@@ -158,7 +158,7 @@ async def refresh_access_token(request_data: RefreshTokenRequest):
         
         # Step 4: Verify user still exists in database
         logger.info(f"Step 2: Verifying user exists (ID: {user_id})...")
-        user = await UserRepository.get_user_by_id(int(user_id))
+        user = await UserRepository.get_user_by_id(user_id)
         
         if not user:
             logger.warning(f"❌ User not found: ID={user_id}")

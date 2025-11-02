@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 import uvicorn
 from app.api.router import google_auth
+from app.api.router import gmail_oauth
+from app.api.router import imap
 from app.config import settings, TORTOISE_ORM
 
 # Create FastAPI application
@@ -35,12 +37,8 @@ app.include_router(google_auth.router)
 # ============================================================================
 # PROTECTED ROUTES (Authentication required)
 # ============================================================================
-
-# When you create protected routers, add them here with dependencies:
-# from app.api.deps import get_current_user
-# from fastapi import Depends
-# from app.api.router import emails
-# app.include_router(emails.router, dependencies=[Depends(get_current_user)])
+app.include_router(gmail_oauth.router)
+app.include_router(imap.router)
 
 # ============================================================================
 # DATABASE CONFIGURATION

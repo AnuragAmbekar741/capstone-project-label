@@ -47,7 +47,7 @@ async def verify_google_token(token: str) -> Optional[Dict[str, Any]]:
             "google_id": idinfo.get("sub"),
             "email": idinfo.get("email"),
             "name": idinfo.get("name"),
-            # "picture": idinfo.get("picture"),
+            "profile_picture": idinfo.get("picture"),
             "email_verified": idinfo.get("email_verified", False),
             "locale": idinfo.get("locale"),
         }

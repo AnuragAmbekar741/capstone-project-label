@@ -1,5 +1,5 @@
 from imapclient import IMAPClient
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 import logging
 import email
 import base64
@@ -30,7 +30,6 @@ class GmailImapService(GmailImapServiceBase):
         Then base64 encode it
         """
         auth_string = f"user={email}\x01auth=Bearer {access_token}\x01\x01"
-        # Base64 encode the auth string
         auth_string_b64 = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
         return auth_string_b64
     
@@ -56,10 +55,6 @@ class GmailImapService(GmailImapServiceBase):
                 raise ValueError("Access token is empty")
             if not email_address:
                 raise ValueError("Email address is empty")
-            
-            logger.debug(f"📧 Email: {email_address}")
-            logger.debug(f"�� Token length: {len(access_token)}")
-            logger.debug(f"🔑 Token preview: {access_token[:30]}...")
             
             host = 'imap.gmail.com'
             port = 993
@@ -91,23 +86,11 @@ class GmailImapService(GmailImapServiceBase):
                     logger.error(f"❌ oauth2_login() failed: {e}")
                     logger.info("🔄 Falling back to manual XOAUTH2...")
             
-            # Manual XOAUTH2 implementation
-            logger.info("�� Starting manual XOAUTH2 authentication...")
-            
-            # Create auth string (NO base64 encoding yet - imaplib does it internally)
             auth_string = f"user={email_address}\x01auth=Bearer {access_token}\x01\x01"
-            logger.debug(f"📝 Raw auth string length: {len(auth_string)}")
-            logger.debug(f"📝 Raw auth string (first 80 chars repr): {repr(auth_string[:80])}")
-            
-            # For imaplib.authenticate(), the lambda should return the STRING (not base64)
-            # imaplib will base64 encode it internally
+
             def oauth2_auth_handler(challenge):
-                logger.debug(f"📨 Server challenge received: {challenge}")
-                logger.debug(f"�� Returning raw auth string (imaplib will base64 it)")
-                # Return raw string - imaplib handles base64 encoding
                 return auth_string
             
-            logger.info("🔐 Calling _imap.authenticate('XOAUTH2', handler)...")
             self.client._imap.authenticate('XOAUTH2', oauth2_auth_handler)
             logger.info(f"✅ Successfully authenticated to Gmail IMAP for {email_address}")
             return True

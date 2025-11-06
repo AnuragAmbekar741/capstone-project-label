@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-llm
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: email-llm
+  template:
+    metadata:
+      labels:
+        app: email-llm
+    spec:
+      containers:
+        - name: api
+          image: email-llm:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OBJECT_STORE_IMPL
+              value: "s3"
+            - name: ADAPTER_BUCKET
+              value: "adapters-bucket"
+            - name: DEVICE
+              value: "cpu"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: email-llm-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: email-llm
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

@@ -14,7 +14,7 @@ import { useGmailAccounts } from "@/hooks/gmail/useGmailAccount";
 
 interface ConnectGmailModalProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange?: (open: boolean) => void | undefined;
 }
 
 // Google Logo SVG Component
@@ -54,7 +54,7 @@ export const ConnectGmailModal: React.FC<ConnectGmailModalProps> = ({
     gmailAccountsData?.accounts && gmailAccountsData.accounts.length > 0;
 
   React.useEffect(() => {
-    if (hasConnectedAccounts && open) {
+    if (hasConnectedAccounts && open && typeof onOpenChange === "function") {
       onOpenChange(false);
     }
   }, [hasConnectedAccounts, open, onOpenChange]);

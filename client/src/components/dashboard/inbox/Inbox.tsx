@@ -7,10 +7,26 @@ import {
 import { MailList } from "@/components/mail/MailList";
 import { MailDetail } from "@/components/mail/MailDetails";
 import { mails, type Mail } from "@/data/mail-data";
+import { useEmails } from "@/hooks/imap/useEmails";
+import { useGmailAccounts } from "@/hooks/gmail/useGmailAccount";
 
 export const Inbox: React.FC = () => {
   const [selectedMail, setSelectedMail] = React.useState<Mail>(mails[0]);
-
+  const { data: gmailAccountsData } = useGmailAccounts();
+  const accountId = gmailAccountsData?.accounts[0]?.id;
+  const {
+    data: emails,
+    isLoading,
+    error,
+  } = useEmails({
+    accountId: accountId || "",
+    folder: "INBOX",
+    limit: 50,
+    enabled: !!accountId,
+  });
+  console.log("Emails:", emails);
+  console.log("Is Loading:", isLoading);
+  console.log("Error:", error);
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full">
       {/* Mail List Panel */}

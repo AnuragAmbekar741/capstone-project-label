@@ -9,6 +9,7 @@ from app.services.base.imap_service import (
     EmailMessage,
     FolderInfo
 )
+from app.api.utils.email_cleaner import EmailCleaner
 
 logger = logging.getLogger(__name__)
 
@@ -270,17 +271,24 @@ class GmailImapService(GmailImapServiceBase):
             return False
     
     def _parse_email(self, uid: int, data: Dict) -> EmailMessage:
-        """Parse IMAP email data into EmailMessage"""
+        """Parse IMAP email data into EmailMessage with cleaning"""
         try:
             # Parse RFC822 message
             msg_data = data[b'RFC822']
             msg = email.message_from_bytes(msg_data)
             
-            # Decode headers
-            subject = self._decode_header(msg.get('Subject', ''))
-            from_addr = self._decode_header(msg.get('From', ''))
-            to_addrs = [self._decode_header(addr) for addr in msg.get_all('To', [])]
-            date_str = msg.get('Date', '')
+            # Decode and clean headers
+            raw_subject = self._decode_header(msg.get('Subject', ''))
+            subject = EmailCleaner.clean_subject(raw_subject)
+            
+            raw_from = self._decode_header(msg.get('From', ''))
+            from_addr = EmailCleaner.extract_email_address(raw_from)
+            
+            raw_to = [self._decode_header(addr) for addr in msg.get_all('To', [])]
+            to_addrs = [EmailCleaner.extract_email_address(addr) for addr in raw_to]
+            
+            raw_date = msg.get('Date', '')
+            date_str = EmailCleaner.clean_date(raw_date)
             
             # Extract body
             body_text = None
@@ -290,26 +298,39 @@ class GmailImapService(GmailImapServiceBase):
                 for part in msg.walk():
                     content_type = part.get_content_type()
                     if content_type == 'text/plain' and not body_text:
-                        body_text = part.get_payload(decode=True).decode('utf-8', errors='ignore')
+                        payload = part.get_payload(decode=True)
+                        if payload:
+                            body_text = payload.decode('utf-8', errors='ignore')
+                            body_text = EmailCleaner.clean_body_text(body_text)
                     elif content_type == 'text/html' and not body_html:
-                        body_html = part.get_payload(decode=True).decode('utf-8', errors='ignore')
+                        payload = part.get_payload(decode=True)
+                        if payload:
+                            body_html = payload.decode('utf-8', errors='ignore')
+                            body_html = EmailCleaner.clean_body_html(body_html)
             else:
                 content_type = msg.get_content_type()
                 payload = msg.get_payload(decode=True)
                 if payload:
-                    body_text = payload.decode('utf-8', errors='ignore')
+                    decoded = payload.decode('utf-8', errors='ignore')
+                    if content_type == 'text/html':
+                        body_html = EmailCleaner.clean_body_html(decoded)
+                    else:
+                        body_text = EmailCleaner.clean_body_text(decoded)
             
-            # Extract labels/flags
+            # Extract and filter labels/flags
             flags = data.get(b'FLAGS', [])
-            labels = [f.decode('utf-8') for f in flags if isinstance(f, bytes)]
+            raw_labels = [f.decode('utf-8') for f in flags if isinstance(f, bytes)]
+            labels = EmailCleaner.filter_system_labels(raw_labels)
             
-            # Extract attachments (simplified)
+            # Extract and clean attachments
             attachments = []
             if msg.is_multipart():
                 for part in msg.walk():
                     if part.get_content_disposition() == 'attachment':
+                        filename = part.get_filename()
+                        cleaned_filename = EmailCleaner.clean_attachment_filename(filename)
                         attachments.append({
-                            'filename': part.get_filename(),
+                            'filename': cleaned_filename,
                             'content_type': part.get_content_type(),
                             'size': len(part.get_payload(decode=True) or b'')
                         })

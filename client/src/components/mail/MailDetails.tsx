@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -29,7 +28,7 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
   return (
     <div className="flex h-full flex-col">
       {/* Action Toolbar */}
-      <div className="flex items-center border-b p-4">
+      <div className="flex items-center border-b p-4 shrink-0">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon">
             <Archive className="h-4 w-4" />
@@ -72,8 +71,8 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
         </DropdownMenu>
       </div>
 
-      {/* Mail Content */}
-      <ScrollArea className="flex-1">
+      {/* Mail Content - scrollbar hidden */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
         <div className="flex flex-col gap-4 p-6">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
@@ -99,11 +98,11 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
             <p>{mail.text}</p>
           </div>
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Reply Footer */}
       <Separator />
-      <div className="p-4">
+      <div className="p-4 shrink-0">
         <div className="grid gap-4">
           <Button size="sm" className="ml-auto">
             Send

@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type Mail } from "@/data/mail-data";
 import { MailCard } from "./MailCard";
 
@@ -26,15 +25,15 @@ export const MailList: React.FC<MailListProps> = ({
         </div>
       </div>
 
-      <Tabs defaultValue="all" className="px-4 shrink-0">
+      {/* <Tabs defaultValue="all" className="px-4 shrink-0">
         <TabsList>
           <TabsTrigger value="all">All mail</TabsTrigger>
           <TabsTrigger value="unread">Unread</TabsTrigger>
         </TabsList>
-      </Tabs>
+      </Tabs> */}
 
-      {/* Scrollable mail list */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      {/* Scrollable mail list - scrollbar hidden */}
+      <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide">
         <div className="flex flex-col gap-2 p-4 pt-0">
           {mails.map((mail) => (
             <MailCard

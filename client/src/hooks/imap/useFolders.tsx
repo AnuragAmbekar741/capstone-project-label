@@ -7,7 +7,6 @@ export const useGetFolder = (accountId: string) => {
     queryKey: ["userFolders"],
     queryFn: () => getFolders(accountId),
     enabled: !!accountId,
-    staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 };

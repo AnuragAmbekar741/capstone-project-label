@@ -22,7 +22,6 @@ export const AppSidebar: React.FC = () => {
   const { data: user } = useCurrentUser();
   const router = useRouterState();
   const currentPath = router.location.pathname;
-
   return (
     <Sidebar className="border-r">
       {/* Header */}

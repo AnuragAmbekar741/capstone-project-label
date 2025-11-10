@@ -15,15 +15,14 @@ const DashboardLayout: React.FC<PropsWithChildren> = ({ children }) => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full">
+      <div className="flex h-screen w-full overflow-hidden">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <AppBar />
-          <div className="flex-1 overflow-hidden">{children}</div>
+          <main className="flex-1 overflow-hidden">{children}</main>
         </div>
       </div>
 
-      {/* Gmail Connection Modal */}
       <ConnectGmailModal open={showModal} />
     </SidebarProvider>
   );

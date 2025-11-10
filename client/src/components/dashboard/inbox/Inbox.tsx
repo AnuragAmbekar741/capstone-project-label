@@ -87,7 +87,10 @@ export const Inbox: React.FC = () => {
   const currentSelectedMail = selectedMail || displayMails[0];
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full max-w-[82vw]">
+    <ResizablePanelGroup
+      direction="horizontal"
+      className="h-full lg:max-w-[82vw] 2xl:max-w-[87vw]"
+    >
       {/* Mail List Panel */}
       <ResizablePanel defaultSize={30} minSize={25}>
         <MailList

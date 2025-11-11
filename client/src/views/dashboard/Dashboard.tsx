@@ -8,7 +8,7 @@ import {
 import { AppSidebar } from "@/components/app-bar/AppSidebar";
 import { AppBar } from "@/components/app-bar/AppBar";
 import { MailList } from "@/components/mail/MailList";
-import { MailDetail } from "@/components/mail/MailDetails";
+import { MailDetail } from "@/components/mail/mail-detail/MailDetails";
 import { mails } from "@/data/mail-data";
 
 export default function Dashboard() {

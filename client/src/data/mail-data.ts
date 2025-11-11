@@ -19,6 +19,11 @@ export interface Mail {
     size: number;
   }>;
   toAddresses?: string[];
+  // Thread identification
+  messageId?: string | null;
+  inReplyTo?: string | null;
+  references?: string | null;
+  isThread?: boolean;
 }
 
 /**
@@ -127,7 +132,6 @@ export const filterUserLabels = (labels: string[]): string[] => {
 export const emailToMail = (email: EmailResponse): Mail => {
   const { name, email: emailAddr } = parseEmailAddress(email.from_address);
 
-  // Use cleaned preview text
   const textPreview = cleanEmailPreview(email.body_text, email.body_html, 200);
 
   return {
@@ -143,6 +147,11 @@ export const emailToMail = (email: EmailResponse): Mail => {
     bodyText: email.body_text,
     attachments: email.attachments,
     toAddresses: email.to_addresses,
+    // Thread information
+    messageId: email.message_id,
+    inReplyTo: email.in_reply_to,
+    references: email.references,
+    isThread: email.is_thread ?? false,
   };
 };
 

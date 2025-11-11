@@ -16,6 +16,11 @@ export interface EmailResponse {
   body_html: string | null;
   labels: string[];
   attachments: EmailAttachment[];
+  // Thread identification fields
+  message_id?: string | null;
+  in_reply_to?: string | null;
+  references?: string | null;
+  is_thread?: boolean;
 }
 
 export interface FolderResponse {

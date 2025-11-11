@@ -10,6 +10,7 @@ from app.services.base.imap_service import (
     FolderInfo
 )
 from app.api.utils.email_cleaner import EmailCleaner
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -156,17 +157,41 @@ class GmailImapService(GmailImapServiceBase):
             self.client.select_folder(folder)
             
             # Build search criteria
-            search_criteria = ['ALL']
             if since_date:
-                # Format: (SINCE "01-Jan-2024")
-                search_criteria = [f'SINCE "{since_date}"']
+                # Frontend sends date in DD-MMM-YYYY format, use it directly
+                # IMAP requires dates in DD-MMM-YYYY format (e.g., "11-Nov-2024")
+                try:
+                    # Validate the date format is DD-MMM-YYYY
+                    # datetime is already imported at the top of the file
+                    datetime.strptime(since_date, '%d-%b-%Y')
+                    # Use the date directly - no conversion needed
+                    search_criteria = ['SINCE', since_date]
+                except ValueError as e:
+                    logger.warning(f"Invalid date format '{since_date}': {e}. Using ALL instead.")
+                    search_criteria = ['ALL']
+            else:
+                search_criteria = ['ALL']
             
             # Search for emails
-            uids = self.client.search(search_criteria)
+            search_results = self.client.search(search_criteria)
             
-            # Limit results (most recent first)
+            # Convert SearchIds to list if needed
+            if hasattr(search_results, '__iter__') and not isinstance(search_results, (str, bytes)):
+                uids = list(search_results)
+            else:
+                uids = search_results if isinstance(search_results, list) else []
+            
+            # If no UIDs found, return empty list
+            if not uids:
+                logger.info(f"No emails found in folder {folder}")
+                return []
+            
+            # Reverse to get most recent first (IMAP returns UIDs in ascending order)
+            uids = list(reversed(uids))
+            
+            # Limit results to most recent emails
             if len(uids) > limit:
-                uids = uids[-limit:]
+                uids = uids[:limit]
             
             # Fetch emails
             messages = self.client.fetch(uids, ['RFC822', 'FLAGS', 'ENVELOPE'])
@@ -180,7 +205,46 @@ class GmailImapService(GmailImapServiceBase):
                     logger.error(f"Failed to parse email {uid}: {e}")
                     continue
             
-            return email_list
+            # Sort by date (most recent first) to ensure correct order
+            def get_date_sort_key(email: EmailMessage) -> datetime:
+                try:
+                    date_str = email.date
+                    
+                    # Try ISO format parsing (e.g., "2025-11-10T14:57:09+05:30")
+                    if 'T' in date_str:
+                        # Handle ISO format with timezone
+                        if '+' in date_str or date_str.endswith('Z'):
+                            # Parse ISO format with timezone
+                            try:
+                                # Remove timezone for parsing, then add it back
+                                if date_str.endswith('Z'):
+                                    date_str = date_str.replace('Z', '+00:00')
+                                # Parse ISO format
+                                return datetime.fromisoformat(date_str)
+                            except ValueError:
+                                pass
+                        else:
+                            # ISO format without timezone
+                            return datetime.fromisoformat(date_str)
+                    
+                    # Try standard email date format
+                    from email.utils import parsedate_to_datetime
+                    parsed_date = parsedate_to_datetime(date_str)
+                    if parsed_date:
+                        return parsed_date
+                    
+                    # Try direct datetime parsing
+                    return datetime.fromisoformat(date_str)
+                except (ValueError, TypeError, AttributeError) as e:
+                    # If date parsing fails, put at the end (oldest)
+                    logger.warning(f"Failed to parse date '{email.date}': {e}")
+                    return datetime.min
+            
+            # Sort by date (most recent first - reverse=True)
+            email_list.sort(key=get_date_sort_key, reverse=True)
+            
+            # Ensure we only return the top limit most recent
+            return email_list[:limit]
             
         except Exception as e:
             logger.error(f"Failed to fetch emails: {e}")

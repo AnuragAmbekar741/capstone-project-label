@@ -19,12 +19,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { type Mail } from "@/data/mail-data";
+import { cleanEmailBody } from "@/utils/emailCleaner";
 
 interface MailDetailProps {
   mail: Mail;
 }
 
 export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
+  // Clean the email body for display
+  const cleanedBody = React.useMemo(
+    () => cleanEmailBody(mail.bodyText, mail.bodyHtml),
+    [mail.bodyText, mail.bodyHtml]
+  );
+
   return (
     <div className="flex h-full flex-col">
       {/* Action Toolbar */}
@@ -94,9 +101,7 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
             </div>
           </div>
           <Separator />
-          <div className="text-sm">
-            <p>{mail.text}</p>
-          </div>
+          <div className="text-sm whitespace-pre-wrap">{cleanedBody}</div>
         </div>
       </div>
 

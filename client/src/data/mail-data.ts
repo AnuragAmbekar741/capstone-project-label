@@ -1,4 +1,5 @@
 import type { EmailResponse } from "@/api/imap/imap";
+import { cleanEmailPreview } from "@/utils/emailCleaner";
 
 export interface Mail {
   id: string;
@@ -126,13 +127,8 @@ export const filterUserLabels = (labels: string[]): string[] => {
 export const emailToMail = (email: EmailResponse): Mail => {
   const { name, email: emailAddr } = parseEmailAddress(email.from_address);
 
-  // Extract text preview (strip HTML tags if needed)
-  const textPreview =
-    email.body_text ||
-    (email.body_html
-      ? email.body_html.replace(/<[^>]*>/g, "").substring(0, 200)
-      : "") ||
-    "(No content)";
+  // Use cleaned preview text
+  const textPreview = cleanEmailPreview(email.body_text, email.body_html, 200);
 
   return {
     id: email.uid.toString(),

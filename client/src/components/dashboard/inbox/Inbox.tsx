@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -24,11 +24,12 @@ export const Inbox: React.FC = () => {
     accountId: accountId || "",
     folder: "INBOX",
     limit: 50,
+    // sinceDate: todayDate,
     enabled: !!accountId,
   });
 
   // Convert EmailResponse[] to Mail[]
-  const mails: Mail[] = React.useMemo(() => {
+  const mails: Mail[] = useMemo(() => {
     if (!emails) return [];
     return emails.map(emailToMail);
   }, [emails]);
@@ -36,17 +37,15 @@ export const Inbox: React.FC = () => {
   // Use dummy data as fallback if no account connected
   const displayMails = accountId ? mails : dummyMails;
 
-  const [selectedMail, setSelectedMail] = React.useState<Mail | null>(null);
+  const [selectedMail, setSelectedMail] = useState<Mail | null>(null);
 
   // Update selected mail when mails change
-  React.useEffect(() => {
+  useEffect(() => {
     if (displayMails.length > 0) {
-      // If current selected mail exists in new list, keep it
       const existingMail = displayMails.find((m) => m.id === selectedMail?.id);
       if (existingMail) {
         setSelectedMail(existingMail);
       } else {
-        // Otherwise, select first mail
         setSelectedMail(displayMails[0]);
       }
     }

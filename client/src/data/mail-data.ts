@@ -1,4 +1,5 @@
 import type { EmailResponse } from "@/api/imap/imap";
+import { cleanEmailPreview } from "@/utils/emailCleaner";
 
 export interface Mail {
   id: string;
@@ -18,6 +19,11 @@ export interface Mail {
     size: number;
   }>;
   toAddresses?: string[];
+  // Thread identification
+  messageId?: string | null;
+  inReplyTo?: string | null;
+  references?: string | null;
+  isThread?: boolean;
 }
 
 /**
@@ -126,13 +132,7 @@ export const filterUserLabels = (labels: string[]): string[] => {
 export const emailToMail = (email: EmailResponse): Mail => {
   const { name, email: emailAddr } = parseEmailAddress(email.from_address);
 
-  // Extract text preview (strip HTML tags if needed)
-  const textPreview =
-    email.body_text ||
-    (email.body_html
-      ? email.body_html.replace(/<[^>]*>/g, "").substring(0, 200)
-      : "") ||
-    "(No content)";
+  const textPreview = cleanEmailPreview(email.body_text, email.body_html, 200);
 
   return {
     id: email.uid.toString(),
@@ -147,6 +147,11 @@ export const emailToMail = (email: EmailResponse): Mail => {
     bodyText: email.body_text,
     attachments: email.attachments,
     toAddresses: email.to_addresses,
+    // Thread information
+    messageId: email.message_id,
+    inReplyTo: email.in_reply_to,
+    references: email.references,
+    isThread: email.is_thread ?? false,
   };
 };
 

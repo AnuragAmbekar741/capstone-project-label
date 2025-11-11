@@ -19,6 +19,7 @@ import { Route as DashboardJunkRouteImport } from './routes/dashboard/junk'
 import { Route as DashboardInboxRouteImport } from './routes/dashboard/inbox'
 import { Route as DashboardDraftRouteImport } from './routes/dashboard/draft'
 import { Route as DashboardSplatRouteImport } from './routes/dashboard/$'
+import { Route as DashboardFolderNameRouteImport } from './routes/dashboard/folder.$name'
 
 const LandingRoute = LandingRouteImport.update({
   id: '/landing',
@@ -70,6 +71,11 @@ const DashboardSplatRoute = DashboardSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardFolderNameRoute = DashboardFolderNameRouteImport.update({
+  id: '/folder/$name',
+  path: '/folder/$name',
+  getParentRoute: () => DashboardRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/junk': typeof DashboardJunkRoute
   '/dashboard/sent': typeof DashboardSentRoute
+  '/dashboard/folder/$name': typeof DashboardFolderNameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/junk': typeof DashboardJunkRoute
   '/dashboard/sent': typeof DashboardSentRoute
+  '/dashboard/folder/$name': typeof DashboardFolderNameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/dashboard/inbox': typeof DashboardInboxRoute
   '/dashboard/junk': typeof DashboardJunkRoute
   '/dashboard/sent': typeof DashboardSentRoute
+  '/dashboard/folder/$name': typeof DashboardFolderNameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/dashboard/inbox'
     | '/dashboard/junk'
     | '/dashboard/sent'
+    | '/dashboard/folder/$name'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/dashboard/inbox'
     | '/dashboard/junk'
     | '/dashboard/sent'
+    | '/dashboard/folder/$name'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/dashboard/inbox'
     | '/dashboard/junk'
     | '/dashboard/sent'
+    | '/dashboard/folder/$name'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -227,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSplatRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/folder/$name': {
+      id: '/dashboard/folder/$name'
+      path: '/folder/$name'
+      fullPath: '/dashboard/folder/$name'
+      preLoaderRoute: typeof DashboardFolderNameRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
@@ -236,6 +255,7 @@ interface DashboardRouteChildren {
   DashboardInboxRoute: typeof DashboardInboxRoute
   DashboardJunkRoute: typeof DashboardJunkRoute
   DashboardSentRoute: typeof DashboardSentRoute
+  DashboardFolderNameRoute: typeof DashboardFolderNameRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
@@ -244,6 +264,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardInboxRoute: DashboardInboxRoute,
   DashboardJunkRoute: DashboardJunkRoute,
   DashboardSentRoute: DashboardSentRoute,
+  DashboardFolderNameRoute: DashboardFolderNameRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(

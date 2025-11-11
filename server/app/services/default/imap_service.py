@@ -1,5 +1,5 @@
 from imapclient import IMAPClient
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import logging
 import email
 import base64
@@ -11,6 +11,8 @@ from app.services.base.imap_service import (
 )
 from app.api.utils.email_cleaner import EmailCleaner
 from datetime import datetime
+from dataclasses import dataclass
+from app.api.models import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -158,8 +160,6 @@ class GmailImapService(GmailImapServiceBase):
             
             # Build search criteria
             if since_date:
-                # Frontend sends date in DD-MMM-YYYY format, use it directly
-                # IMAP requires dates in DD-MMM-YYYY format (e.g., "11-Nov-2024")
                 try:
                     # Validate the date format is DD-MMM-YYYY
                     # datetime is already imported at the top of the file
@@ -354,6 +354,11 @@ class GmailImapService(GmailImapServiceBase):
             raw_date = msg.get('Date', '')
             date_str = EmailCleaner.clean_date(raw_date)
             
+            # Extract thread identification headers
+            message_id = msg.get('Message-ID', '').strip() or None
+            in_reply_to = msg.get('In-Reply-To', '').strip() or None
+            references = msg.get('References', '').strip() or None
+            
             # Extract body
             body_text = None
             body_html = None
@@ -408,7 +413,10 @@ class GmailImapService(GmailImapServiceBase):
                 body_text=body_text,
                 body_html=body_html,
                 labels=labels,
-                attachments=attachments
+                attachments=attachments,
+                message_id=message_id,
+                in_reply_to=in_reply_to,
+                references=references,
             )
             
         except Exception as e:

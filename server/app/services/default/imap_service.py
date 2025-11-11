@@ -12,7 +12,6 @@ from app.services.base.imap_service import (
 from app.api.utils.email_cleaner import EmailCleaner
 from datetime import datetime
 from dataclasses import dataclass
-from app.api.models import BaseModel
 
 logger = logging.getLogger(__name__)
 

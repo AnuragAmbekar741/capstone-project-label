@@ -30,6 +30,11 @@ class EmailResponse(BaseModel):
     body_html: Optional[str]
     labels: List[str]
     attachments: List[dict]
+    # Thread identification fields
+    message_id: Optional[str] = None
+    in_reply_to: Optional[str] = None
+    references: Optional[str] = None
+    is_thread: bool = False  # Computed field indicating if email is part of a thread
 
 # Helper function to get account and refresh token if needed
 async def get_valid_gmail_account(
@@ -126,7 +131,11 @@ async def get_emails(
                 body_text=e.body_text,
                 body_html=e.body_html,
                 labels=e.labels,
-                attachments=e.attachments
+                attachments=e.attachments,
+                message_id=e.message_id,
+                in_reply_to=e.in_reply_to,
+                references=e.references,
+                is_thread=bool(e.in_reply_to or e.references),  # True if part of thread
             )
             for e in emails
         ]
@@ -167,7 +176,11 @@ async def search_emails(
                 body_text=e.body_text,
                 body_html=e.body_html,
                 labels=e.labels,
-                attachments=e.attachments
+                attachments=e.attachments,
+                message_id=e.message_id,
+                in_reply_to=e.in_reply_to,
+                references=e.references,
+                is_thread=bool(e.in_reply_to or e.references),  # True if part of thread
             )
             for e in emails
         ]

@@ -51,7 +51,7 @@ class GmailImapService(GmailImapServiceBase):
             self.access_token = access_token
             self.email_address = email_address
             
-            logger.info(f"🔌 Connecting to Gmail IMAP for {email_address}")
+            logger.info(f"Connecting to Gmail IMAP for {email_address}")
             
             # Validate inputs
             if not access_token:
@@ -63,18 +63,18 @@ class GmailImapService(GmailImapServiceBase):
             port = 993
             
             # Connect to IMAP server
-            logger.info(f"📡 Connecting to {host}:{port}")
+            logger.info(f"Connecting to {host}:{port}")
             self.client = IMAPClient(host, port=port, use_uid=True, ssl=True)
-            logger.info("✅ IMAP TCP connection established")
+            logger.info("IMAP TCP connection established")
             
             # Check capabilities
             try:
                 caps = self.client.capabilities()
                 logger.debug(f"📋 Server capabilities: {caps}")
                 if b'AUTH=XOAUTH2' not in caps:
-                    logger.warning("⚠️  Server may not support XOAUTH2")
+                    logger.warning("Server may not support XOAUTH2")
             except Exception as e:
-                logger.warning(f"⚠️  Could not check capabilities: {e}")
+                logger.warning(f"Could not check capabilities: {e}")
             
             # Try oauth2_login first if it exists
             if hasattr(self.client, 'oauth2_login'):
@@ -84,10 +84,10 @@ class GmailImapService(GmailImapServiceBase):
                     logger.info(f"✅ Successfully authenticated using oauth2_login()")
                     return True
                 except AttributeError:
-                    logger.warning("⚠️  oauth2_login() not available, using manual XOAUTH2")
+                    logger.warning("oauth2_login() not available, using manual XOAUTH2")
                 except Exception as e:
-                    logger.error(f"❌ oauth2_login() failed: {e}")
-                    logger.info("🔄 Falling back to manual XOAUTH2...")
+                    logger.error(f"oauth2_login() failed: {e}")
+                    logger.info("Falling back to manual XOAUTH2...")
             
             auth_string = f"user={email_address}\x01auth=Bearer {access_token}\x01\x01"
 
@@ -95,18 +95,18 @@ class GmailImapService(GmailImapServiceBase):
                 return auth_string
             
             self.client._imap.authenticate('XOAUTH2', oauth2_auth_handler)
-            logger.info(f"✅ Successfully authenticated to Gmail IMAP for {email_address}")
+            logger.info(f"Successfully authenticated to Gmail IMAP for {email_address}")
             return True
             
         except AttributeError as e:
-            logger.error(f"❌ Attribute error - method not found: {e}")
+            logger.error(f"Attribute error - method not found: {e}")
             if self.client:
-                logger.error(f"❌ Available methods: {[m for m in dir(self.client) if not m.startswith('_')]}")
+                logger.error(f"Available methods: {[m for m in dir(self.client) if not m.startswith('_')]}")
             self.client = None
             return False
         except Exception as e:
-            logger.error(f"❌ Failed to connect to Gmail IMAP: {type(e).__name__}: {e}")
-            logger.error(f"❌ Full error traceback:", exc_info=True)
+            logger.error(f"Failed to connect to Gmail IMAP: {type(e).__name__}: {e}")
+            logger.error(f"Full error traceback:", exc_info=True)
             self.client = None
             return False
     

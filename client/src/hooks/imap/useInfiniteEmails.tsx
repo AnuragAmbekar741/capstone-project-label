@@ -31,6 +31,11 @@ export const useInfiniteEmails = (params: UseInfiniteEmailsParams) => {
         params.sinceDate
       ),
     getNextPageParam: (lastPage, allPages) => {
+      // Limit to 20 pages (1000 emails if limit=50)
+      const MAX_PAGES = 20;
+      if (allPages.length >= MAX_PAGES) {
+        return undefined;
+      }
       // If last page has fewer emails than limit, we've reached the end
       if (lastPage.length < limit) {
         return undefined;

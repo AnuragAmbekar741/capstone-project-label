@@ -1,14 +1,5 @@
 import * as React from "react";
-import {
-  Trash2,
-  Reply,
-  ReplyAll,
-  Forward,
-  MoreVertical,
-  MessageSquare,
-  Plus,
-  Tag,
-} from "lucide-react";
+import { Trash2, MoreVertical, MessageSquare, Plus, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

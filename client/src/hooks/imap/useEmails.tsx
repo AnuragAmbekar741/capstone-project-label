@@ -6,6 +6,7 @@ interface UseEmailsParams {
   accountId: string;
   folder?: string;
   limit?: number;
+  offset?: number;
   sinceDate?: string;
   enabled?: boolean;
 }
@@ -17,6 +18,7 @@ export const emailsQueryOptions = (params: UseEmailsParams) =>
       params.accountId,
       params.folder || "INBOX",
       params.limit || 50,
+      params.offset || 0,
       params.sinceDate,
     ],
     queryFn: () =>
@@ -24,6 +26,7 @@ export const emailsQueryOptions = (params: UseEmailsParams) =>
         params.accountId,
         params.folder || "INBOX",
         params.limit || 50,
+        params.offset || 0,
         params.sinceDate
       ),
     enabled: params.enabled !== false && !!params.accountId,

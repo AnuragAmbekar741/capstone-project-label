@@ -7,7 +7,7 @@ import {
 import { MailList } from "@/components/mail/MailList";
 import { MailDetail } from "@/components/mail/mail-detail/MailDetails";
 import { type Mail, emailToMail, mails as dummyMails } from "@/data/mail-data";
-import { useEmails } from "@/hooks/imap/useEmails";
+import { useInfiniteEmails } from "@/hooks/imap/useInfiniteEmails";
 import { useGmailAccounts } from "@/hooks/gmail/useGmailAccount";
 import { useGetFolder } from "@/hooks/imap/useFolders";
 import { getFolderNameFromRoute } from "@/utils/folderMapper";
@@ -30,19 +30,28 @@ export const MailView: React.FC = () => {
     return getFolderNameFromRoute(currentPath, folders);
   }, [currentPath, folders]);
 
-  // Fetch emails from API with dynamic folder
+  // Use infinite query for emails
   const {
-    data: emails,
+    data: emailsData,
     isLoading,
     error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
     refetch,
     isRefetching,
-  } = useEmails({
+  } = useInfiniteEmails({
     accountId: accountId || "",
     folder: folderName,
     limit: 50,
     enabled: !!accountId && !!folderName,
   });
+
+  // Flatten all pages of emails into a single array
+  const emails = useMemo(() => {
+    if (!emailsData?.pages) return [];
+    return emailsData.pages.flat();
+  }, [emailsData]);
 
   // Convert EmailResponse[] to Mail[]
   const mails: Mail[] = useMemo(() => {
@@ -206,6 +215,9 @@ export const MailView: React.FC = () => {
           mails={displayMails}
           selectedMail={currentSelectedMail}
           onSelectMail={setSelectedMail}
+          onLoadMore={() => fetchNextPage()}
+          hasNextPage={hasNextPage || false}
+          isFetchingNextPage={isFetchingNextPage}
         />
       </ResizablePanel>
 

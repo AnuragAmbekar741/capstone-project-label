@@ -33,11 +33,13 @@ export const getEmails = async (
   accountId: string,
   folder: string = "INBOX",
   limit: number = 50,
+  offset: number = 0,
   sinceDate?: string
 ): Promise<EmailResponse[]> => {
   const params = new URLSearchParams({
     folder,
     limit: limit.toString(),
+    offset: offset.toString(),
   });
   if (sinceDate) {
     params.append("since_date", sinceDate);

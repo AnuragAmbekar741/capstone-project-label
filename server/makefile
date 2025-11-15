@@ -29,6 +29,14 @@ migrate-init:
 migrate-gen:
 	poetry run aerich migrate
 
+# Run Celery worker
+celery-worker:
+	poetry run celery -A app.celery_app worker --loglevel=info
+
+# Run Celery Beat scheduler
+celery-beat:
+	poetry run celery -A app.celery_app beat --loglevel=info
+
 
 # Apply migrations to database
 migrate-up:

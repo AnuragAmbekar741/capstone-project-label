@@ -9,7 +9,6 @@ from app.models.gmail_account import GmailAccount
 from app.repository.gmail_account_repository import GmailAccountRepository
 from app.services.default.imap_service import GmailImapService
 from app.services.default.gmail_oauth_service import gmail_oauth_service
-from app.services.default.gmail_api_service import GmailApiService
 import logging
 
 logger = logging.getLogger(__name__)

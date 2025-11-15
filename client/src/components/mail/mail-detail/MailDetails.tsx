@@ -1,5 +1,11 @@
 import * as React from "react";
-import { Trash2, MoreVertical, MessageSquare, Plus, Tag } from "lucide-react";
+import {
+  Trash2,
+  MoreVertical,
+  MessageSquare,
+  Sparkles,
+  Tag,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -155,14 +161,15 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
                   </Badge>
                 ))
               ) : (
-                <Badge
-                  variant="outline"
-                  className="text-xs px-4 py-1.5 flex items-center gap-1 cursor-pointer hover:bg-accent"
-                  title="Add label to this email"
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="text-xs px-4 py-1.5 h-auto bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 font-semibold"
+                  title="Auto label this email"
                 >
-                  <Plus className="h-3 w-3" />
-                  Add Label
-                </Badge>
+                  <Sparkles className="h-3 w-3" />
+                  Auto Label
+                </Button>
               )}
             </div>
 

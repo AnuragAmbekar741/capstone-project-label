@@ -2,7 +2,7 @@ import re
 import html
 from typing import Optional, List
 from email.utils import parseaddr, parsedate_to_datetime
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -129,6 +129,77 @@ class EmailCleaner:
         except (ValueError, TypeError) as e:
             logger.warning(f"Failed to parse date '{date_str}': {e}")
             return date_str
+    
+    @staticmethod
+    def normalize_datetime_to_utc(dt: datetime) -> datetime:
+        """
+        Normalize a datetime to timezone-aware UTC.
+        
+        If the datetime is naive (no timezone), assumes it's UTC and adds timezone info.
+        If the datetime is timezone-aware, converts it to UTC.
+        
+        Args:
+            dt: datetime object (can be naive or timezone-aware)
+            
+        Returns:
+            timezone-aware datetime in UTC
+        """
+        if dt.tzinfo is None:
+            # Naive datetime - assume UTC
+            return dt.replace(tzinfo=timezone.utc)
+        else:
+            # Timezone-aware datetime - convert to UTC
+            return dt.astimezone(timezone.utc)
+    
+    @staticmethod
+    def parse_email_date_to_utc(date_str: str) -> datetime:
+        """
+        Parse an email date string and return a timezone-aware UTC datetime.
+        
+        Tries multiple parsing strategies:
+        1. ISO format with timezone
+        2. ISO format without timezone (assumes UTC)
+        3. Standard email date format (parsedate_to_datetime)
+        4. Direct ISO parsing
+        
+        Args:
+            date_str: Email date string in various formats
+            
+        Returns:
+            timezone-aware datetime in UTC, or datetime.min (UTC) if parsing fails
+        """
+        try:
+            # Try ISO format parsing (e.g., "2025-11-10T14:57:09+05:30")
+            if 'T' in date_str:
+                # Handle ISO format with timezone
+                if '+' in date_str or date_str.endswith('Z'):
+                    try:
+                        # Handle Z suffix (UTC)
+                        if date_str.endswith('Z'):
+                            date_str = date_str.replace('Z', '+00:00')
+                        # Parse ISO format - already timezone-aware
+                        parsed = datetime.fromisoformat(date_str)
+                        return EmailCleaner.normalize_datetime_to_utc(parsed)
+                    except ValueError:
+                        pass
+                else:
+                    # ISO format without timezone - parse and normalize to UTC
+                    parsed = datetime.fromisoformat(date_str)
+                    return EmailCleaner.normalize_datetime_to_utc(parsed)
+            
+            # Try standard email date format
+            parsed_date = parsedate_to_datetime(date_str)
+            if parsed_date:
+                return EmailCleaner.normalize_datetime_to_utc(parsed_date)
+            
+            # Try direct datetime parsing
+            parsed = datetime.fromisoformat(date_str)
+            return EmailCleaner.normalize_datetime_to_utc(parsed)
+            
+        except (ValueError, TypeError, AttributeError) as e:
+            # If date parsing fails, return datetime.min in UTC
+            logger.warning(f"Failed to parse date '{date_str}': {e}")
+            return datetime.min.replace(tzinfo=timezone.utc)
     
     @staticmethod
     def filter_system_labels(labels: List[str]) -> List[str]:

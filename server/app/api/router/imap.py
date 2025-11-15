@@ -106,6 +106,7 @@ async def get_emails(
     account_id: UUID = Path(..., description="Gmail account ID"),
     folder: str = Query('INBOX', description="Folder to fetch from"),
     limit: int = Query(50, ge=1, le=200, description="Number of emails to fetch"),
+    offset: int = Query(0, ge=0, description="Number of emails to skip"),
     since_date: Optional[str] = Query(None, description="Fetch emails since date (YYYY-MM-DD)"),
     current_user: User = Depends(get_current_user)
 ):
@@ -118,8 +119,12 @@ async def get_emails(
         if not access_token:
             raise HTTPException(status_code=400, detail="No access token available")
         
+        fetch_limit = limit + offset
         await imap_service.connect(access_token, account.email_address)
-        emails = await imap_service.fetch_emails(folder, limit, since_date)
+        emails = await imap_service.fetch_emails(folder, fetch_limit, since_date)
+
+        # Apply offset
+        emails = emails[offset:offset+limit]
         
         return [
             EmailResponse(

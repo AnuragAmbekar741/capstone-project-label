@@ -10,7 +10,7 @@ from app.services.base.imap_service import (
     FolderInfo
 )
 from app.api.utils.email_cleaner import EmailCleaner
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ class GmailImapService(GmailImapServiceBase):
             self.access_token = access_token
             self.email_address = email_address
             
-            logger.info(f"🔌 Connecting to Gmail IMAP for {email_address}")
+            logger.info(f"Connecting to Gmail IMAP for {email_address}")
             
             # Validate inputs
             if not access_token:
@@ -63,18 +63,18 @@ class GmailImapService(GmailImapServiceBase):
             port = 993
             
             # Connect to IMAP server
-            logger.info(f"📡 Connecting to {host}:{port}")
+            logger.info(f"Connecting to {host}:{port}")
             self.client = IMAPClient(host, port=port, use_uid=True, ssl=True)
-            logger.info("✅ IMAP TCP connection established")
+            logger.info("IMAP TCP connection established")
             
             # Check capabilities
             try:
                 caps = self.client.capabilities()
                 logger.debug(f"📋 Server capabilities: {caps}")
                 if b'AUTH=XOAUTH2' not in caps:
-                    logger.warning("⚠️  Server may not support XOAUTH2")
+                    logger.warning("Server may not support XOAUTH2")
             except Exception as e:
-                logger.warning(f"⚠️  Could not check capabilities: {e}")
+                logger.warning(f"Could not check capabilities: {e}")
             
             # Try oauth2_login first if it exists
             if hasattr(self.client, 'oauth2_login'):
@@ -84,10 +84,10 @@ class GmailImapService(GmailImapServiceBase):
                     logger.info(f"✅ Successfully authenticated using oauth2_login()")
                     return True
                 except AttributeError:
-                    logger.warning("⚠️  oauth2_login() not available, using manual XOAUTH2")
+                    logger.warning("oauth2_login() not available, using manual XOAUTH2")
                 except Exception as e:
-                    logger.error(f"❌ oauth2_login() failed: {e}")
-                    logger.info("🔄 Falling back to manual XOAUTH2...")
+                    logger.error(f"oauth2_login() failed: {e}")
+                    logger.info("Falling back to manual XOAUTH2...")
             
             auth_string = f"user={email_address}\x01auth=Bearer {access_token}\x01\x01"
 
@@ -95,18 +95,18 @@ class GmailImapService(GmailImapServiceBase):
                 return auth_string
             
             self.client._imap.authenticate('XOAUTH2', oauth2_auth_handler)
-            logger.info(f"✅ Successfully authenticated to Gmail IMAP for {email_address}")
+            logger.info(f"Successfully authenticated to Gmail IMAP for {email_address}")
             return True
             
         except AttributeError as e:
-            logger.error(f"❌ Attribute error - method not found: {e}")
+            logger.error(f"Attribute error - method not found: {e}")
             if self.client:
-                logger.error(f"❌ Available methods: {[m for m in dir(self.client) if not m.startswith('_')]}")
+                logger.error(f"Available methods: {[m for m in dir(self.client) if not m.startswith('_')]}")
             self.client = None
             return False
         except Exception as e:
-            logger.error(f"❌ Failed to connect to Gmail IMAP: {type(e).__name__}: {e}")
-            logger.error(f"❌ Full error traceback:", exc_info=True)
+            logger.error(f"Failed to connect to Gmail IMAP: {type(e).__name__}: {e}")
+            logger.error(f"Full error traceback:", exc_info=True)
             self.client = None
             return False
     
@@ -206,38 +206,8 @@ class GmailImapService(GmailImapServiceBase):
             
             # Sort by date (most recent first) to ensure correct order
             def get_date_sort_key(email: EmailMessage) -> datetime:
-                try:
-                    date_str = email.date
-                    
-                    # Try ISO format parsing (e.g., "2025-11-10T14:57:09+05:30")
-                    if 'T' in date_str:
-                        # Handle ISO format with timezone
-                        if '+' in date_str or date_str.endswith('Z'):
-                            # Parse ISO format with timezone
-                            try:
-                                # Remove timezone for parsing, then add it back
-                                if date_str.endswith('Z'):
-                                    date_str = date_str.replace('Z', '+00:00')
-                                # Parse ISO format
-                                return datetime.fromisoformat(date_str)
-                            except ValueError:
-                                pass
-                        else:
-                            # ISO format without timezone
-                            return datetime.fromisoformat(date_str)
-                    
-                    # Try standard email date format
-                    from email.utils import parsedate_to_datetime
-                    parsed_date = parsedate_to_datetime(date_str)
-                    if parsed_date:
-                        return parsed_date
-                    
-                    # Try direct datetime parsing
-                    return datetime.fromisoformat(date_str)
-                except (ValueError, TypeError, AttributeError) as e:
-                    # If date parsing fails, put at the end (oldest)
-                    logger.warning(f"Failed to parse date '{email.date}': {e}")
-                    return datetime.min
+                """Get timezone-aware UTC datetime for sorting"""
+                return EmailCleaner.parse_email_date_to_utc(email.date)
             
             # Sort by date (most recent first - reverse=True)
             email_list.sort(key=get_date_sort_key, reverse=True)

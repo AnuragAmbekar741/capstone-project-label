@@ -9,6 +9,7 @@ from app.models.gmail_account import GmailAccount
 from app.repository.gmail_account_repository import GmailAccountRepository
 from app.services.default.imap_service import GmailImapService
 from app.services.default.gmail_oauth_service import gmail_oauth_service
+from app.services.default.gmail_api_service import GmailApiService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,19 @@ class EmailResponse(BaseModel):
     in_reply_to: Optional[str] = None
     references: Optional[str] = None
     is_thread: bool = False  # Computed field indicating if email is part of a thread
+
+# Add these response models after EmailResponse
+class CreateLabelRequest(BaseModel):
+    name: str
+    label_list_visibility: str = "labelShow"  # labelShow or labelHide
+    message_list_visibility: str = "show"  # show or hide
+
+class LabelResponse(BaseModel):
+    id: str
+    name: str
+    label_list_visibility: str
+    message_list_visibility: str
+    type: str
 
 # Helper function to get account and refresh token if needed
 async def get_valid_gmail_account(
@@ -100,6 +114,43 @@ async def list_folders(
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         await imap_service.disconnect()
+
+@router.post("/accounts/{account_id}/labels", response_model=LabelResponse)
+async def create_label(
+    account_id: UUID = Path(..., description="Gmail account ID"),
+    request: CreateLabelRequest = ...,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new label in Gmail"""
+    account = await get_valid_gmail_account(account_id, current_user)
+    
+    gmail_api_service = GmailApiService()
+    try:
+        access_token = account.get_access_token
+        if not access_token:
+            raise HTTPException(status_code=400, detail="No access token available")
+        
+        label_data = await gmail_api_service.create_label(
+            access_token=access_token,
+            label_name=request.name,
+            label_list_visibility=request.label_list_visibility,
+            message_list_visibility=request.message_list_visibility
+        )
+        
+        return LabelResponse(
+            id=label_data.get("id", ""),
+            name=label_data.get("name", ""),
+            label_list_visibility=label_data.get("labelListVisibility", ""),
+            message_list_visibility=label_data.get("messageListVisibility", ""),
+            type=label_data.get("type", "user")
+        )
+        
+    except ValueError as e:
+        logger.error(f"Failed to create label: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to create label: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/accounts/{account_id}/emails", response_model=List[EmailResponse])
 async def get_emails(

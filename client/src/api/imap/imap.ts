@@ -1,4 +1,6 @@
 import { get } from "../request";
+import { del } from "../request";
+import { post } from "../request";
 
 export interface EmailAttachment {
   filename: string;
@@ -26,6 +28,20 @@ export interface EmailResponse {
 export interface FolderResponse {
   name: string;
   flags: string[];
+}
+
+export interface CreateLabelRequest {
+  name: string;
+  label_list_visibility?: "labelShow" | "labelHide";
+  message_list_visibility?: "show" | "hide";
+}
+
+export interface LabelResponse {
+  id: string;
+  name: string;
+  label_list_visibility: string;
+  message_list_visibility: string;
+  type: string;
 }
 
 // Fetch emails from a Gmail account
@@ -72,5 +88,30 @@ export const getFolders = async (
 ): Promise<FolderResponse[]> => {
   return await get<FolderResponse[]>(
     `/api/gmail/accounts/${accountId}/folders`
+  );
+};
+
+// Create a new label
+export const createLabel = async (
+  accountId: string,
+  request: CreateLabelRequest
+): Promise<LabelResponse> => {
+  return await post<LabelResponse, CreateLabelRequest>(
+    `/api/gmail/accounts/${accountId}/labels`,
+    request
+  );
+};
+
+// Delete an email
+export const deleteEmail = async (
+  accountId: string,
+  uid: number,
+  folder: string = "INBOX"
+): Promise<{ message: string }> => {
+  const params = new URLSearchParams({
+    folder,
+  });
+  return await del<{ message: string }>(
+    `/api/gmail/accounts/${accountId}/emails/${uid}?${params.toString()}`
   );
 };

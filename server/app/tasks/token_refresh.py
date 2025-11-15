@@ -3,7 +3,7 @@ from app.celery_app import celery_app
 from app.repository.gmail_account_repository import GmailAccountRepository
 from app.services.default.gmail_oauth_service import gmail_oauth_service
 from app.enums.gmail import GmailAccountStatus
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone  # Add timezone import
 import logging
 
 logger = logging.getLogger(__name__)
@@ -74,15 +74,15 @@ def refresh_expiring_gmail_tokens():
                         # Refresh the access token
                         token_data = gmail_oauth_service.refresh_auth_access_token(refresh_token)
                         
-                        # Calculate new expiry
+                        # Calculate new expiry - use timezone-aware datetime
                         expires_in = token_data.get('expires_in', 3600)
                         # Handle both timestamp and seconds format
                         if isinstance(expires_in, (int, float)) and expires_in > 1000000000:
-                            # It's a timestamp
-                            new_token_expiry = datetime.fromtimestamp(expires_in)
+                            # It's a timestamp - make it timezone-aware (UTC)
+                            new_token_expiry = datetime.fromtimestamp(expires_in, tz=timezone.utc)
                         else:
-                            # It's seconds from now
-                            new_token_expiry = datetime.now() + timedelta(seconds=expires_in)
+                            # It's seconds from now - use timezone-aware datetime
+                            new_token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
                         
                         # Update meta with new access token (keep refresh_token)
                         new_meta = account.meta.copy()

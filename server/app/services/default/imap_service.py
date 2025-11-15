@@ -10,7 +10,7 @@ from app.services.base.imap_service import (
     FolderInfo
 )
 from app.api.utils.email_cleaner import EmailCleaner
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -206,38 +206,8 @@ class GmailImapService(GmailImapServiceBase):
             
             # Sort by date (most recent first) to ensure correct order
             def get_date_sort_key(email: EmailMessage) -> datetime:
-                try:
-                    date_str = email.date
-                    
-                    # Try ISO format parsing (e.g., "2025-11-10T14:57:09+05:30")
-                    if 'T' in date_str:
-                        # Handle ISO format with timezone
-                        if '+' in date_str or date_str.endswith('Z'):
-                            # Parse ISO format with timezone
-                            try:
-                                # Remove timezone for parsing, then add it back
-                                if date_str.endswith('Z'):
-                                    date_str = date_str.replace('Z', '+00:00')
-                                # Parse ISO format
-                                return datetime.fromisoformat(date_str)
-                            except ValueError:
-                                pass
-                        else:
-                            # ISO format without timezone
-                            return datetime.fromisoformat(date_str)
-                    
-                    # Try standard email date format
-                    from email.utils import parsedate_to_datetime
-                    parsed_date = parsedate_to_datetime(date_str)
-                    if parsed_date:
-                        return parsed_date
-                    
-                    # Try direct datetime parsing
-                    return datetime.fromisoformat(date_str)
-                except (ValueError, TypeError, AttributeError) as e:
-                    # If date parsing fails, put at the end (oldest)
-                    logger.warning(f"Failed to parse date '{email.date}': {e}")
-                    return datetime.min
+                """Get timezone-aware UTC datetime for sorting"""
+                return EmailCleaner.parse_email_date_to_utc(email.date)
             
             # Sort by date (most recent first - reverse=True)
             email_list.sort(key=get_date_sort_key, reverse=True)

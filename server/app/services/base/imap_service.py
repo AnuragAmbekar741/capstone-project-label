@@ -14,6 +14,10 @@ class EmailMessage:
     body_html: Optional[str]
     labels: List[str]
     attachments: List[Dict[str, Any]]
+    # Thread identification fields
+    message_id: Optional[str] = None
+    in_reply_to: Optional[str] = None
+    references: Optional[str] = None
 
 @dataclass
 class FolderInfo:

@@ -1,5 +1,5 @@
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models.gmail_account import GmailAccount
 from app.enums.gmail import GmailAccountStatus
 
@@ -70,7 +70,7 @@ class GmailAccountRepository:
     async def get_expiring_accounts(minutes: int = 15) -> list[GmailAccount]:
         """Get accounts expiring within N minutes (for Celery Beat)"""
         from datetime import timedelta
-        threshold = datetime.now() + timedelta(minutes=minutes)
+        threshold = datetime.now(timezone.utc) + timedelta(minutes=minutes)
         return await GmailAccount.filter(
             token_expiry__lt=threshold,
             status=GmailAccountStatus.ACTIVE

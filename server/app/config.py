@@ -18,6 +18,11 @@ class Settings(BaseModel):
 
     REDIS_URL: str = os.environ.get("REDIS_URL")
 
+    #LangChain Configuration
+    GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY")
+    GEMINI_MODEL: str = os.environ.get("GEMINI_MODEL")
+    GEMINI_TEMPERATURE: float = os.environ.get("GEMINI_TEMPERATURE")
+
     #Google OAuth Configuration
     GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET")

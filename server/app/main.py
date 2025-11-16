@@ -6,6 +6,7 @@ import uvicorn
 from app.api.router import google_auth
 from app.api.router import gmail_oauth
 from app.api.router import imap
+from app.api.router import langchain_test
 from app.config import settings, TORTOISE_ORM
 
 # Create FastAPI application
@@ -33,6 +34,9 @@ app.add_middleware(
 
 # Authentication routes - /auth/google (public), /auth/me (protected)
 app.include_router(google_auth.router)
+
+app.include_router(langchain_test.router)
+
 
 # ============================================================================
 # PROTECTED ROUTES (Authentication required)

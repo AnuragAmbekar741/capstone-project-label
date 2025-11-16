@@ -28,6 +28,8 @@ requests = "^2.32.5"
 httpx = "^0.28.1"
 google-auth-oauthlib = "^1.2.2"
 imapclient = "^3.0.1"
+langchain = "^1.0.7"
+langchain-google-genai = "^3.0.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.2"

@@ -22,8 +22,6 @@ export const useCreateLabel = () => {
   >({
     mutationFn: ({ accountId, request }) => createLabel(accountId, request),
     onSuccess: (data) => {
-      // Invalidate folders query to refresh the label list
-      // Match the query key used in useGetFolder: ["userFolders"]
       queryClient.invalidateQueries({
         queryKey: ["userFolders"],
       });

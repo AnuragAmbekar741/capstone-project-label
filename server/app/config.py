@@ -16,7 +16,15 @@ class Settings(BaseModel):
     #Database Configuration
     DATABASE_URL:str = os.environ.get("DATABASE_URL","sqlite://db.sqlite3")
 
+    # Redis Configuration
     REDIS_URL: str = os.environ.get("REDIS_URL")
+    REDIS_CACHE_URL: str = os.environ.get("REDIS_CACHE_URL")
+
+
+    #LangChain Configuration
+    GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY")
+    GEMINI_MODEL: str = os.environ.get("GEMINI_MODEL")
+    GEMINI_TEMPERATURE: float = os.environ.get("GEMINI_TEMPERATURE")
 
     #Google OAuth Configuration
     GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID")

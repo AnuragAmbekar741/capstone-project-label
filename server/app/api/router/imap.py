@@ -9,6 +9,7 @@ from app.models.gmail_account import GmailAccount
 from app.repository.gmail_account_repository import GmailAccountRepository
 from app.services.default.imap_service import GmailImapService
 from app.services.default.gmail_oauth_service import gmail_oauth_service
+from app.services.workers.redis_label_cache import RedisLabelCache
 import logging
 
 logger = logging.getLogger(__name__)
@@ -76,9 +77,9 @@ async def get_valid_gmail_account(
         try:
             token_data = gmail_oauth_service.refresh_auth_access_token(refresh_token)
             # Update account with new token
-            from datetime import datetime, timedelta
+            from datetime import datetime, timedelta, timezone
             expires_in = token_data.get('expires_in', 3600)
-            token_expiry = datetime.now() + timedelta(seconds=expires_in)
+            token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
             
             account.meta['access_token'] = token_data['access_token']
             account.token_expiry = token_expiry
@@ -98,6 +99,7 @@ async def list_folders(
     account = await get_valid_gmail_account(account_id, current_user)
     
     imap_service = GmailImapService()
+    redis_cache = RedisLabelCache()
     try:
         access_token = account.get_access_token
         if not access_token:
@@ -105,6 +107,20 @@ async def list_folders(
         
         await imap_service.connect(access_token, account.email_address)
         folders = await imap_service.list_folders()
+
+        # Extract folder/label names
+        folder_names = [f.name for f in folders]
+
+        try:
+            success = redis_cache.set_labels(str(account_id), folder_names)
+            print(f"Success: {success}")
+            if success:
+                logger.info(f"✅ Successfully cached {len(folder_names)} labels for account {account_id}")
+                logger.info(f"📋 Cached labels: {folder_names}")
+            else:
+                logger.warning(f"⚠️ set_labels returned False for account {account_id}")
+        except Exception as e:
+            logger.error(f"Failed to set labels in Redis: {e}")
         
         return [FolderResponse(name=f.name, flags=f.flags) for f in folders]
         

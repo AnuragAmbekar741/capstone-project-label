@@ -43,6 +43,7 @@ import { useSuggestLabel } from "@/hooks/imap/useSuggestLabel";
 import { type SuggestLabelResponse } from "@/api/imap/imap";
 import { useAddLabelToEmail } from "@/hooks/imap/useAddLabelToEmail";
 import { AutoLabelModal } from "@/components/modals/AutoLabelModal";
+import { AxiosError } from "axios";
 interface MailDetailProps {
   mail: Mail;
 }
@@ -216,7 +217,15 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
       // Convert single response to array format for modal (if modal expects array)
       setLabelResult(response);
     } catch (error) {
-      // Error is handled by the hook's onError
+      const axiosError = error as AxiosError<{
+        detail?: string;
+        message?: string;
+      }>;
+      console.error("Error suggesting label:", {
+        message: axiosError.message,
+        response: axiosError.response?.data,
+        status: axiosError.response?.status,
+      });
       setShowAutoLabelModal(false);
     } finally {
       setIsLabeling(false);
@@ -242,8 +251,15 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
       });
       // Modal closing is handled by hook's onSuccess callback
     } catch (error) {
-      // Error toast is handled by the hook's onError
-      // Don't close modal on error so user can retry
+      const axiosError = error as AxiosError<{
+        detail?: string;
+        message?: string;
+      }>;
+      console.error("Error suggesting label:", {
+        message: axiosError.message,
+        response: axiosError.response?.data,
+        status: axiosError.response?.status,
+      });
     }
   };
 

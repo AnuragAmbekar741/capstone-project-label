@@ -44,6 +44,30 @@ export interface LabelResponse {
   type: string;
 }
 
+export interface EmailForLabeling {
+  id: string;
+  subject: string;
+  body: string;
+}
+
+export interface BatchLabelEmailsRequest {
+  emails: EmailForLabeling[];
+  apply_labels?: boolean;
+}
+
+export interface EmailLabelResult {
+  id: string;
+  label: string;
+  reason: string;
+}
+
+export interface BatchLabelEmailsResponse {
+  results: EmailLabelResult[];
+  total_processed: number;
+  successful: number;
+  failed: number;
+}
+
 // Fetch emails from a Gmail account
 export const getEmails = async (
   accountId: string,
@@ -98,6 +122,17 @@ export const createLabel = async (
 ): Promise<LabelResponse> => {
   return await post<LabelResponse, CreateLabelRequest>(
     `/api/gmail/accounts/${accountId}/labels`,
+    request
+  );
+};
+
+// Batch label emails using AI
+export const batchLabelEmails = async (
+  accountId: string,
+  request: BatchLabelEmailsRequest
+): Promise<BatchLabelEmailsResponse> => {
+  return await post<BatchLabelEmailsResponse, BatchLabelEmailsRequest>(
+    `/api/gmail/accounts/${accountId}/emails/batch-label`,
     request
   );
 };

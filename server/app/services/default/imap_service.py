@@ -147,7 +147,7 @@ class GmailImapService(GmailImapServiceBase):
     async def fetch_emails(
         self,
         folder: str = 'INBOX',
-        limit: int = 50,
+        limit: int = 10,
         since_date: Optional[str] = None
     ) -> List[EmailMessage]:
         """Fetch emails from a folder"""

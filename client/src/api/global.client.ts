@@ -10,7 +10,7 @@ import axios, {
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
-const API_TIMEOUT = 15000; // 30 seconds
+const API_TIMEOUT = 300000; // 5 minutes
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

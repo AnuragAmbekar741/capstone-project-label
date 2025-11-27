@@ -19,11 +19,12 @@ import {
 import { type Mail } from "@/data/mail-data";
 import DOMPurify from "dompurify";
 import {
-  EMAIL_SANITIZE_CONFIG,
+  // EMAIL_SANITIZE_CONFIG,
   EMAIL_CONTENT_CLASSES,
   EMAIL_CONTENT_STYLES,
   EMAIL_DROPDOWN_ITEMS,
   EMAIL_CONSTANTS,
+  sanitizeEmailContent,
 } from "./mailDetails.config";
 import { useThreadEmails } from "@/hooks/imap/useThreadEmails";
 import { useGmailAccounts } from "@/hooks/gmail/useGmailAccount";
@@ -120,7 +121,7 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
   // Get HTML content if available, otherwise use text
   const emailContent = React.useMemo(() => {
     if (activeEmail.bodyHtml) {
-      return DOMPurify.sanitize(activeEmail.bodyHtml, EMAIL_SANITIZE_CONFIG);
+      return sanitizeEmailContent(activeEmail.bodyHtml);
     }
 
     if (activeEmail.bodyText) {

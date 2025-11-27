@@ -12,6 +12,7 @@ from app.services.default.gmail_oauth_service import gmail_oauth_service
 from app.services.workers.redis_label_cache import RedisLabelCache
 import logging
 
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/gmail", tags=["Gmail IMAP"])
@@ -49,6 +50,8 @@ class LabelResponse(BaseModel):
     label_list_visibility: str
     message_list_visibility: str
     type: str
+
+
 
 # Helper function to get account and refresh token if needed
 async def get_valid_gmail_account(
@@ -171,6 +174,7 @@ async def create_label(
         logger.error(f"Error creating label: {e}")
         raise HTTPException(status_code=500, detail="Failed to create label")
 
+
 @router.get("/accounts/{account_id}/emails", response_model=List[EmailResponse])
 async def get_emails(
     account_id: UUID = Path(..., description="Gmail account ID"),
@@ -180,10 +184,13 @@ async def get_emails(
     since_date: Optional[str] = Query(None, description="Fetch emails since date (YYYY-MM-DD)"),
     current_user: User = Depends(get_current_user)
 ):
-    """Fetch emails from a Gmail account"""
+    """
+    Fetch emails from a Gmail account.
+    """
     account = await get_valid_gmail_account(account_id, current_user)
     
     imap_service = GmailImapService()
+    
     try:
         access_token = account.get_access_token
         if not access_token:
@@ -196,6 +203,7 @@ async def get_emails(
         # Apply offset
         emails = emails[offset:offset+limit]
         
+        # Return emails
         return [
             EmailResponse(
                 uid=e.uid,
@@ -210,7 +218,7 @@ async def get_emails(
                 message_id=e.message_id,
                 in_reply_to=e.in_reply_to,
                 references=e.references,
-                is_thread=bool(e.in_reply_to or e.references),  # True if part of thread
+                is_thread=bool(e.in_reply_to or e.references),
             )
             for e in emails
         ]
@@ -220,6 +228,7 @@ async def get_emails(
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         await imap_service.disconnect()
+
 
 @router.get("/accounts/{account_id}/search", response_model=List[EmailResponse])
 async def search_emails(

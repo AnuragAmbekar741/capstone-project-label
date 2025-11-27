@@ -64,13 +64,15 @@ export const MailView: React.FC = () => {
 
   const [selectedMail, setSelectedMail] = useState<Mail | null>(null);
 
-  // Update selected mail when mails change
+  // Update selected mail when mails change (including label updates)
   useEffect(() => {
     if (displayMails.length > 0) {
       const existingMail = displayMails.find((m) => m.id === selectedMail?.id);
       if (existingMail) {
+        // Update selectedMail with the latest data (including updated labels)
         setSelectedMail(existingMail);
-      } else {
+      } else if (!selectedMail) {
+        // Only set to first mail if no mail is selected
         setSelectedMail(displayMails[0]);
       }
     }

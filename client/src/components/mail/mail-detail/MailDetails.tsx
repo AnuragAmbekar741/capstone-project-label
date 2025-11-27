@@ -39,7 +39,10 @@ import { toast } from "sonner";
 import { DeleteEmailModal } from "@/components/modals/DeleteEmailModal";
 import { useCreateLabel } from "@/hooks/imap/useCreateLabel";
 import { CreateLabelModal } from "@/components/modals/CreateLabelModal";
-
+import { useSuggestLabel } from "@/hooks/imap/useSuggestLabel";
+import { type SuggestLabelResponse } from "@/api/imap/imap";
+import { useAddLabelToEmail } from "@/hooks/imap/useAddLabelToEmail";
+import { AutoLabelModal } from "@/components/modals/AutoLabelModal";
 interface MailDetailProps {
   mail: Mail;
 }
@@ -69,6 +72,17 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
 
   const createLabelMutation = useCreateLabel();
   const [showCreateLabelModal, setShowCreateLabelModal] = React.useState(false);
+
+  const suggestLabelMutation = useSuggestLabel();
+  const addLabelMutation = useAddLabelToEmail(() => {
+    // Close modal on successful label application
+    setShowAutoLabelModal(false);
+    setLabelResult(null);
+  });
+  const [showAutoLabelModal, setShowAutoLabelModal] = React.useState(false);
+  const [labelResult, setLabelResult] =
+    React.useState<SuggestLabelResponse | null>(null);
+  const [isLabeling, setIsLabeling] = React.useState(false);
 
   // Handle delete email - open confirmation dialog
   const handleDeleteClick = () => {
@@ -154,6 +168,85 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
     // Handle other actions...
   };
 
+  // Add this helper function before the component or inside it
+  const getEmailBodyText = (email: typeof activeEmail): string => {
+    // Prefer text body
+    let body = email.bodyText || "";
+
+    // If no text body, extract text from HTML
+    if (!body || !body.trim()) {
+      if (email.bodyHtml) {
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = email.bodyHtml;
+        body = tempDiv.textContent || tempDiv.innerText || "";
+      }
+    }
+
+    return body.trim();
+  };
+
+  // Handle Auto Label button click
+  const handleAutoLabel = async () => {
+    if (!accountId) {
+      toast.error("No Gmail account connected");
+      return;
+    }
+
+    const emailBody = getEmailBodyText(activeEmail);
+
+    // Skip if no body content
+    if (!emailBody) {
+      toast.error("Email has no body content to analyze");
+      return;
+    }
+
+    setIsLabeling(true);
+    setShowAutoLabelModal(true);
+
+    try {
+      const response = await suggestLabelMutation.mutateAsync({
+        accountId,
+        request: {
+          email_id: activeEmail.id,
+          subject: activeEmail.subject || "",
+          body: emailBody,
+        },
+      });
+
+      // Convert single response to array format for modal (if modal expects array)
+      setLabelResult(response);
+    } catch (error) {
+      // Error is handled by the hook's onError
+      setShowAutoLabelModal(false);
+    } finally {
+      setIsLabeling(false);
+    }
+  };
+
+  // Handle applying labels
+  const handleApplyLabels = async () => {
+    if (!accountId || !labelResult || !mail) return;
+
+    const uid = parseInt(mail.id);
+    if (isNaN(uid)) {
+      toast.error("Invalid email ID");
+      return;
+    }
+
+    try {
+      await addLabelMutation.mutateAsync({
+        accountId,
+        uid: uid,
+        label: labelResult.label,
+        folder: "INBOX",
+      });
+      // Modal closing is handled by hook's onSuccess callback
+    } catch (error) {
+      // Error toast is handled by the hook's onError
+      // Don't close modal on error so user can retry
+    }
+  };
+
   return (
     <>
       <div className="flex h-full flex-col">
@@ -179,9 +272,13 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
                   size="sm"
                   className="text-xs px-4 py-1.5 h-auto bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 font-semibold"
                   title="Auto label this email"
+                  onClick={handleAutoLabel}
+                  disabled={isLabeling || !accountId}
                 >
-                  <Sparkles className="h-3 w-3" />
-                  Auto Label
+                  <Sparkles
+                    className={`h-3 w-3 ${isLabeling ? "animate-spin" : ""}`}
+                  />
+                  {isLabeling ? "Labeling..." : "Auto Label"}
                 </Button>
               )}
             </div>
@@ -348,6 +445,19 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
           );
         }}
         isCreating={createLabelMutation.isPending}
+      />
+
+      <AutoLabelModal
+        open={showAutoLabelModal}
+        onOpenChange={setShowAutoLabelModal}
+        results={labelResult ? [labelResult] : null}
+        isLoading={isLabeling}
+        onApplyLabels={handleApplyLabels}
+        onCancel={() => {
+          setShowAutoLabelModal(false);
+          setLabelResult(null);
+        }}
+        isApplying={addLabelMutation.isPending}
       />
     </>
   );

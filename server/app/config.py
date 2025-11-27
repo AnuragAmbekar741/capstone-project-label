@@ -22,9 +22,18 @@ class Settings(BaseModel):
 
 
     #LangChain Configuration
-    GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY")
-    GEMINI_MODEL: str = os.environ.get("GEMINI_MODEL")
-    GEMINI_TEMPERATURE: float = os.environ.get("GEMINI_TEMPERATURE")
+    # Model provider: "gemini" or "openai"
+    LLM_PROVIDER: str = os.environ.get("LLM_PROVIDER", "gemini")
+    
+    # Gemini Configuration
+    GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY", "")
+    GEMINI_MODEL: str = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_TEMPERATURE: float = float(os.environ.get("GEMINI_TEMPERATURE", "0.7"))
+    
+    # OpenAI Configuration
+    OPENAI_API_KEY: str = os.environ.get("OPENAI_API_KEY", "")
+    OPENAI_MODEL: str = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")  # or "gpt-3.5-turbo" for cheaper
+    OPENAI_TEMPERATURE: float = float(os.environ.get("OPENAI_TEMPERATURE", "0.7"))
 
     #Google OAuth Configuration
     GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID")

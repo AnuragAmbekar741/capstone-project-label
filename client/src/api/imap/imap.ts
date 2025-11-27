@@ -44,6 +44,18 @@ export interface LabelResponse {
   type: string;
 }
 
+export interface SuggestLabelRequest {
+  email_id: string;
+  subject: string;
+  body: string;
+}
+
+export interface SuggestLabelResponse {
+  id: string;
+  label: string;
+  reason: string;
+}
+
 // Fetch emails from a Gmail account
 export const getEmails = async (
   accountId: string,
@@ -99,6 +111,31 @@ export const createLabel = async (
   return await post<LabelResponse, CreateLabelRequest>(
     `/api/gmail/accounts/${accountId}/labels`,
     request
+  );
+};
+
+// Suggest label for a single email using AI
+export const suggestLabel = async (
+  accountId: string,
+  request: SuggestLabelRequest
+): Promise<SuggestLabelResponse> => {
+  return await post<SuggestLabelResponse, SuggestLabelRequest>(
+    `/api/gmail/accounts/${accountId}/emails/suggest-label`,
+    request
+  );
+};
+
+// Add a label to an email
+export const addLabelToEmail = async (
+  accountId: string,
+  uid: number,
+  label: string,
+  folder: string = "INBOX"
+): Promise<{ message: string }> => {
+  const params = new URLSearchParams({ folder });
+  return await post<{ message: string }, Record<string, never>>(
+    `/api/gmail/accounts/${accountId}/emails/${uid}/labels/${encodeURIComponent(label)}?${params.toString()}`,
+    {} // Empty body - all params are in path/query
   );
 };
 

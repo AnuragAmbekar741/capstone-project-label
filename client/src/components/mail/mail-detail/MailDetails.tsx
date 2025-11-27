@@ -19,11 +19,12 @@ import {
 import { type Mail } from "@/data/mail-data";
 import DOMPurify from "dompurify";
 import {
-  EMAIL_SANITIZE_CONFIG,
+  // EMAIL_SANITIZE_CONFIG,
   EMAIL_CONTENT_CLASSES,
   EMAIL_CONTENT_STYLES,
   EMAIL_DROPDOWN_ITEMS,
   EMAIL_CONSTANTS,
+  sanitizeEmailContent,
 } from "./mailDetails.config";
 import { useThreadEmails } from "@/hooks/imap/useThreadEmails";
 import { useGmailAccounts } from "@/hooks/gmail/useGmailAccount";
@@ -36,6 +37,8 @@ import { getFolderNameFromRoute } from "@/utils/folderMapper";
 import { useGetFolder } from "@/hooks/imap/useFolders";
 import { toast } from "sonner";
 import { DeleteEmailModal } from "@/components/modals/DeleteEmailModal";
+import { useCreateLabel } from "@/hooks/imap/useCreateLabel";
+import { CreateLabelModal } from "@/components/modals/CreateLabelModal";
 
 interface MailDetailProps {
   mail: Mail;
@@ -63,6 +66,9 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
 
   // Delete email mutation hook
   const deleteEmailMutation = useDeleteEmail();
+
+  const createLabelMutation = useCreateLabel();
+  const [showCreateLabelModal, setShowCreateLabelModal] = React.useState(false);
 
   // Handle delete email - open confirmation dialog
   const handleDeleteClick = () => {
@@ -120,7 +126,7 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
   // Get HTML content if available, otherwise use text
   const emailContent = React.useMemo(() => {
     if (activeEmail.bodyHtml) {
-      return DOMPurify.sanitize(activeEmail.bodyHtml, EMAIL_SANITIZE_CONFIG);
+      return sanitizeEmailContent(activeEmail.bodyHtml);
     }
 
     if (activeEmail.bodyText) {
@@ -140,6 +146,13 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
   const userLabels = React.useMemo(() => {
     return activeEmail.labels || [];
   }, [activeEmail.labels]);
+
+  const handleDropdownAction = (action: string) => {
+    if (action === "add-label") {
+      setShowCreateLabelModal(true);
+    }
+    // Handle other actions...
+  };
 
   return (
     <>
@@ -208,7 +221,10 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {EMAIL_DROPDOWN_ITEMS.map((item) => (
-                <DropdownMenuItem key={item.action}>
+                <DropdownMenuItem
+                  key={item.action}
+                  onClick={() => handleDropdownAction(item.action)}
+                >
                   {item.label}
                 </DropdownMenuItem>
               ))}
@@ -308,6 +324,30 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
         mail={mail}
         onConfirm={handleConfirmDelete}
         isDeleting={deleteEmailMutation.isPending}
+      />
+
+      <CreateLabelModal
+        open={showCreateLabelModal}
+        onOpenChange={setShowCreateLabelModal}
+        onCreate={(name) => {
+          if (!accountId) return;
+          createLabelMutation.mutate(
+            {
+              accountId,
+              request: {
+                name,
+                label_list_visibility: "labelShow",
+                message_list_visibility: "show",
+              },
+            },
+            {
+              onSuccess: () => {
+                setShowCreateLabelModal(false);
+              },
+            }
+          );
+        }}
+        isCreating={createLabelMutation.isPending}
       />
     </>
   );

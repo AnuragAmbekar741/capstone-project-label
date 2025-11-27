@@ -21,9 +21,10 @@ export const useCreateLabel = () => {
     { accountId: string; request: CreateLabelRequest }
   >({
     mutationFn: ({ accountId, request }) => createLabel(accountId, request),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
+      // Invalidate folders for the specific account
       queryClient.invalidateQueries({
-        queryKey: ["userFolders"],
+        queryKey: ["userFolders", variables.accountId],
       });
 
       toast.success(`Label "${data.name}" created successfully`);

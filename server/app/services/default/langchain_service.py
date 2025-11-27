@@ -108,14 +108,20 @@ class LangChainService(LangChainServiceBase):
             labels_context = ""
             if existing_labels:
                 labels_context = f"""
-Existing labels in your account:
+EXISTING LABELS IN YOUR ACCOUNT (USE THESE FIRST):
 {', '.join(existing_labels)}
 
-Please suggest a label from the existing labels above, or suggest a new appropriate label name if none match.
+CRITICAL RULES:
+1. You MUST prioritize using existing labels from the list above
+2. Try to match the email to an existing label even if the match is not perfect - be flexible
+3. Only suggest a NEW label if NO existing label is even remotely relevant
+4. When suggesting a new label, it must be significantly different from all existing labels
+5. Avoid creating similar labels - if an existing label is close, use that instead
 """
             else:
                 labels_context = """
 You don't have any existing labels yet. Please suggest an appropriate label name for this email.
+Keep the label concise (2-4 words max).
 """
 
             # Limit body to 2000 chars to avoid token limits
@@ -130,16 +136,26 @@ Email Subject: {email_subject}
 Email Body:
 {email_body_limited}
 
-Instructions:
-1. If an existing label matches the email content, return that exact label name
-2. If no existing label matches, suggest a new concise label name (2-4 words max)
+STRICT LABELING RULES:
+1. FIRST: Check if ANY existing label matches the email content (even loosely)
+   - If yes, use that EXACT existing label name (case-sensitive)
+   - Be flexible - a partial match is better than creating a new label
+   
+2. ONLY IF NO MATCH: If absolutely no existing label is relevant, suggest ONE new label
+   - New label must be concise (2-4 words max)
+   - New label must be clearly different from all existing labels
+   - Avoid generalizing - be specific to the email content
+
 3. Return your response as a JSON object with this exact format:
 {{
-    "label": "label_name_here",
-    "reason": "brief explanation why this label fits"
+    "label": "EXACT_EXISTING_LABEL_NAME_OR_NEW_LABEL",
+    "reason": "brief explanation - if using existing label, explain why it fits; if new, explain why no existing label worked"
 }}
 
-Only return the JSON object, no additional text."""
+IMPORTANT:
+- Use existing labels whenever possible, even if the match is 70% relevant
+- Only create new labels when the email truly doesn't fit any existing label
+- Only return the JSON object, no additional text."""
 
             # Invoke LLM
             response = self.llm.invoke(prompt)
@@ -205,14 +221,20 @@ Only return the JSON object, no additional text."""
             labels_context = ""
             if existing_labels:
                 labels_context = f"""
-Existing labels in your account:
+EXISTING LABELS IN YOUR ACCOUNT (USE THESE FIRST):
 {', '.join(existing_labels)}
 
-For each email, suggest a label from the existing labels above, or suggest a new appropriate label name if none match.
+CRITICAL RULES:
+1. You MUST prioritize using existing labels from the list above
+2. Try to match emails to existing labels even if the match is not perfect - be flexible
+3. Only suggest a NEW label if NO existing label is even remotely relevant
+4. When suggesting a new label, it must be significantly different from all existing labels
+5. Avoid creating similar labels - if an existing label is close, use that instead
 """
             else:
                 labels_context = """
 You don't have any existing labels yet. For each email, suggest an appropriate label name.
+Keep labels concise (2-4 words max) and avoid creating too many similar labels.
 """
 
             # Format emails for prompt
@@ -236,24 +258,35 @@ Body: {body}
 Emails to label:
 {emails_text}
 
-Instructions:
-1. For each email, if an existing label matches the email content, return that exact label name
-2. If no existing label matches, suggest a new concise label name (2-4 words max)
-3. Return your response as a JSON array with this exact format:
+STRICT LABELING RULES:
+1. FIRST: Check if ANY existing label matches the email content (even loosely)
+   - If yes, use that EXACT existing label name (case-sensitive)
+   - Be flexible - a partial match is better than creating a new label
+   
+2. ONLY IF NO MATCH: If absolutely no existing label is relevant, suggest ONE new label
+   - New label must be concise (2-4 words max)
+   - New label must be clearly different from all existing labels
+   - Avoid generalizing - be specific to the email content
+   
+3. RETURN FORMAT: Return your response as a JSON array with this exact format:
 [
   {{
     "id": "email_id_1",
-    "label": "label_name_here",
-    "reason": "brief explanation why this label fits"
+    "label": "EXACT_EXISTING_LABEL_NAME_OR_NEW_LABEL",
+    "reason": "brief explanation - if using existing label, explain why it fits; if new, explain why no existing label worked"
   }},
   {{
     "id": "email_id_2",
-    "label": "label_name_here",
-    "reason": "brief explanation why this label fits"
+    "label": "EXACT_EXISTING_LABEL_NAME_OR_NEW_LABEL",
+    "reason": "brief explanation"
   }}
 ]
 
-Only return the JSON array, no additional text. Make sure to include all {len(emails)} emails."""
+IMPORTANT: 
+- Use existing labels whenever possible, even if the match is 70% relevant
+- Only create new labels when the email truly doesn't fit any existing label
+- Return the JSON array only, no additional text
+- Make sure to include all {len(emails)} emails in your response"""
 
             # Invoke LLM
             response = self.llm.invoke(prompt)

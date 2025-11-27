@@ -39,10 +39,10 @@ import { toast } from "sonner";
 import { DeleteEmailModal } from "@/components/modals/DeleteEmailModal";
 import { useCreateLabel } from "@/hooks/imap/useCreateLabel";
 import { CreateLabelModal } from "@/components/modals/CreateLabelModal";
-import { useBatchLabelEmails } from "@/hooks/imap/useBatchLabelEmails";
+import { useSuggestLabel } from "@/hooks/imap/useSuggestLabel";
+import { type SuggestLabelResponse } from "@/api/imap/imap";
+import { useAddLabelToEmail } from "@/hooks/imap/useAddLabelToEmail";
 import { AutoLabelModal } from "@/components/modals/AutoLabelModal";
-import type { EmailLabelResult } from "@/api/imap/imap";
-
 interface MailDetailProps {
   mail: Mail;
 }
@@ -73,11 +73,15 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
   const createLabelMutation = useCreateLabel();
   const [showCreateLabelModal, setShowCreateLabelModal] = React.useState(false);
 
-  const batchLabelMutation = useBatchLabelEmails();
+  const suggestLabelMutation = useSuggestLabel();
+  const addLabelMutation = useAddLabelToEmail(() => {
+    // Close modal on successful label application
+    setShowAutoLabelModal(false);
+    setLabelResult(null);
+  });
   const [showAutoLabelModal, setShowAutoLabelModal] = React.useState(false);
-  const [labelResults, setLabelResults] = React.useState<
-    EmailLabelResult[] | null
-  >(null);
+  const [labelResult, setLabelResult] =
+    React.useState<SuggestLabelResponse | null>(null);
   const [isLabeling, setIsLabeling] = React.useState(false);
 
   // Handle delete email - open confirmation dialog
@@ -200,21 +204,17 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
     setShowAutoLabelModal(true);
 
     try {
-      const response = await batchLabelMutation.mutateAsync({
+      const response = await suggestLabelMutation.mutateAsync({
         accountId,
         request: {
-          emails: [
-            {
-              id: activeEmail.id,
-              subject: activeEmail.subject || "",
-              body: emailBody,
-            },
-          ],
-          apply_labels: false, // Don't apply automatically, show in modal first
+          email_id: activeEmail.id,
+          subject: activeEmail.subject || "",
+          body: emailBody,
         },
       });
 
-      setLabelResults(response.results);
+      // Convert single response to array format for modal (if modal expects array)
+      setLabelResult(response);
     } catch (error) {
       // Error is handled by the hook's onError
       setShowAutoLabelModal(false);
@@ -225,48 +225,25 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
 
   // Handle applying labels
   const handleApplyLabels = async () => {
-    if (!accountId || !labelResults || labelResults.length === 0) return;
+    if (!accountId || !labelResult || !mail) return;
 
-    // Get email body with fallback to HTML
-    let emailBody = activeEmail.bodyText || "";
-
-    // If no text body, try to get from HTML and strip tags
-    if (!emailBody || !emailBody.trim()) {
-      if (activeEmail.bodyHtml) {
-        const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = activeEmail.bodyHtml;
-        emailBody = tempDiv.textContent || tempDiv.innerText || "";
-      }
-    }
-
-    // Skip if no body content
-    if (!emailBody || !emailBody.trim()) {
-      toast.error("Email has no body content. Cannot apply labels.");
+    const uid = parseInt(mail.id);
+    if (isNaN(uid)) {
+      toast.error("Invalid email ID");
       return;
     }
 
     try {
-      // Call batch label again with apply_labels=true
-      await batchLabelMutation.mutateAsync({
+      await addLabelMutation.mutateAsync({
         accountId,
-        request: {
-          emails: labelResults.map((result) => ({
-            id: result.id,
-            subject: activeEmail.subject || "",
-            body: emailBody.trim(),
-          })),
-          apply_labels: true,
-        },
+        uid: uid,
+        label: labelResult.label,
+        folder: "INBOX",
       });
-
-      // Invalidate emails query to refresh labels
-      // queryClient.invalidateQueries({ queryKey: ["emails", accountId] });
-
-      setShowAutoLabelModal(false);
-      setLabelResults(null);
-      toast.success("Labels applied successfully!");
+      // Modal closing is handled by hook's onSuccess callback
     } catch (error) {
-      // Error is handled by the hook
+      // Error toast is handled by the hook's onError
+      // Don't close modal on error so user can retry
     }
   };
 
@@ -473,14 +450,14 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
       <AutoLabelModal
         open={showAutoLabelModal}
         onOpenChange={setShowAutoLabelModal}
-        results={labelResults}
+        results={labelResult ? [labelResult] : null}
         isLoading={isLabeling}
         onApplyLabels={handleApplyLabels}
         onCancel={() => {
           setShowAutoLabelModal(false);
-          setLabelResults(null);
+          setLabelResult(null);
         }}
-        isApplying={batchLabelMutation.isPending}
+        isApplying={addLabelMutation.isPending}
       />
     </>
   );

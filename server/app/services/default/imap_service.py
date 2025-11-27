@@ -194,7 +194,7 @@ class GmailImapService(GmailImapServiceBase):
                 uids = uids[:limit]
             
             # Fetch emails
-            messages = self.client.fetch(uids, ['RFC822', 'FLAGS', 'ENVELOPE'])
+            messages = self.client.fetch(uids, ['RFC822', 'FLAGS', 'ENVELOPE','X-GM-LABELS'])
             
             email_list = []
             for uid, data in messages.items():
@@ -246,7 +246,7 @@ class GmailImapService(GmailImapServiceBase):
                 uids = uids[-limit:]
             
             # Fetch emails
-            messages = self.client.fetch(uids, ['RFC822', 'FLAGS', 'ENVELOPE'])
+            messages = self.client.fetch(uids, ['RFC822', 'FLAGS', 'ENVELOPE','X-GM-LABELS'])
             
             email_list = []
             for uid, data in messages.items():
@@ -403,9 +403,23 @@ class GmailImapService(GmailImapServiceBase):
                     else:
                         body_text = EmailCleaner.clean_body_text(decoded)
             
-            # Extract and filter labels/flags
             flags = data.get(b'FLAGS', [])
             raw_labels = [f.decode('utf-8') for f in flags if isinstance(f, bytes)]
+            labels = EmailCleaner.filter_system_labels(raw_labels)
+
+            gmail_labels = data.get(b'X-GM-LABELS', [])
+            flags = data.get(b'FLAGS', [])
+
+            if gmail_labels:
+                raw_labels = []
+                for label in gmail_labels:
+                    if isinstance(label, bytes):
+                        raw_labels.append(label.decode('utf-8'))
+                    else:
+                        raw_labels.append(str(label))
+            else:
+                raw_labels = [f.decode('utf-8') if isinstance(f, bytes) else str(f) for f in flags]
+
             labels = EmailCleaner.filter_system_labels(raw_labels)
             
             # Extract and clean attachments

@@ -44,28 +44,16 @@ export interface LabelResponse {
   type: string;
 }
 
-export interface EmailForLabeling {
-  id: string;
+export interface SuggestLabelRequest {
+  email_id: string;
   subject: string;
   body: string;
 }
 
-export interface BatchLabelEmailsRequest {
-  emails: EmailForLabeling[];
-  apply_labels?: boolean;
-}
-
-export interface EmailLabelResult {
+export interface SuggestLabelResponse {
   id: string;
   label: string;
   reason: string;
-}
-
-export interface BatchLabelEmailsResponse {
-  results: EmailLabelResult[];
-  total_processed: number;
-  successful: number;
-  failed: number;
 }
 
 // Fetch emails from a Gmail account
@@ -126,14 +114,28 @@ export const createLabel = async (
   );
 };
 
-// Batch label emails using AI
-export const batchLabelEmails = async (
+// Suggest label for a single email using AI
+export const suggestLabel = async (
   accountId: string,
-  request: BatchLabelEmailsRequest
-): Promise<BatchLabelEmailsResponse> => {
-  return await post<BatchLabelEmailsResponse, BatchLabelEmailsRequest>(
-    `/api/gmail/accounts/${accountId}/emails/batch-label`,
+  request: SuggestLabelRequest
+): Promise<SuggestLabelResponse> => {
+  return await post<SuggestLabelResponse, SuggestLabelRequest>(
+    `/api/gmail/accounts/${accountId}/emails/suggest-label`,
     request
+  );
+};
+
+// Add a label to an email
+export const addLabelToEmail = async (
+  accountId: string,
+  uid: number,
+  label: string,
+  folder: string = "INBOX"
+): Promise<{ message: string }> => {
+  const params = new URLSearchParams({ folder });
+  return await post<{ message: string }, Record<string, never>>(
+    `/api/gmail/accounts/${accountId}/emails/${uid}/labels/${encodeURIComponent(label)}?${params.toString()}`,
+    {} // Empty body - all params are in path/query
   );
 };
 

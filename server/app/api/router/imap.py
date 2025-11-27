@@ -11,11 +11,7 @@ from app.services.default.imap_service import GmailImapService
 from app.services.default.gmail_oauth_service import gmail_oauth_service
 from app.services.workers.redis_label_cache import RedisLabelCache
 import logging
-from app.services.default.langchain_service import langchain_service
-import asyncio
-import re
-import html
-import json
+
 
 logger = logging.getLogger(__name__)
 
@@ -55,31 +51,7 @@ class LabelResponse(BaseModel):
     message_list_visibility: str
     type: str
 
-# Add these models after LabelResponse (around line 56)
 
-class EmailForLabeling(BaseModel):
-    """Email data for batch labeling"""
-    id: str  # Email UID
-    subject: str
-    body: str
-
-class BatchLabelEmailsRequest(BaseModel):
-    """Request model for batch email labeling"""
-    emails: List[EmailForLabeling]
-    apply_labels: bool = False  # Whether to automatically apply labels to emails
-
-class EmailLabelResult(BaseModel):
-    """Result for a single labeled email"""
-    id: str
-    label: str
-    reason: str
-
-class BatchLabelEmailsResponse(BaseModel):
-    """Response model for batch email labeling"""
-    results: List[EmailLabelResult]
-    total_processed: int
-    successful: int
-    failed: int
 
 # Helper function to get account and refresh token if needed
 async def get_valid_gmail_account(
@@ -257,138 +229,6 @@ async def get_emails(
     finally:
         await imap_service.disconnect()
 
-@router.post("/accounts/{account_id}/emails/batch-label", response_model=BatchLabelEmailsResponse)
-async def batch_label_emails(
-    account_id: UUID = Path(..., description="Gmail account ID"),
-    request: BatchLabelEmailsRequest = ...,
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Label multiple emails in batch using AI (LangChain + OpenAI/Gemini).
-    Sends email subjects and bodies to LLM and returns suggested labels.
-    Optionally applies labels to emails if apply_labels=True.
-    """
-    account = await get_valid_gmail_account(account_id, current_user)
-    
-    redis_cache = RedisLabelCache()
-    imap_service = GmailImapService()
-    
-    try:
-        # Get existing labels from Redis cache for AI context
-        existing_labels = redis_cache.get_labels(str(account_id))
-        logger.info(f"Retrieved {len(existing_labels)} existing labels from cache for batch labeling")
-        
-        # Filter out emails with empty body
-        valid_emails = []
-        for email in request.emails:
-            if email.body and email.body.strip():
-                valid_emails.append({
-                    "id": email.id,
-                    "subject": email.subject or "",
-                    "body": email.body.strip()[:2000]  # Limit body length
-                })
-            else:
-                logger.debug(f"Skipping email {email.id} - empty body")
-        
-        if not valid_emails:
-            raise HTTPException(
-                status_code=400, 
-                detail="No valid emails to label. All emails have empty body."
-            )
-        
-        # Limit to 20 emails per batch
-        if len(valid_emails) > 20:
-            logger.warning(f"Limiting batch to 20 emails (requested {len(valid_emails)})")
-            valid_emails = valid_emails[:20]
-        
-        logger.info(f"🤖 Batch labeling {len(valid_emails)} emails...")
-        
-        # Get batch labels from AI
-        labeled_results = langchain_service.label_emails_batch(
-            emails=valid_emails,
-            existing_labels=existing_labels
-        )
-        
-        # Process results
-        successful = 0
-        failed = 0
-        results = []
-        
-        access_token = account.get_access_token
-        if not access_token:
-            raise HTTPException(status_code=400, detail="No access token available")
-        
-        # Connect to IMAP if we need to apply labels
-        if request.apply_labels:
-            await imap_service.connect(access_token, account.email_address)
-        
-        for result in labeled_results:
-            email_id = result.get("id")
-            suggested_label = result.get("label", "").strip()
-            reason = result.get("reason", "")
-            
-            if not email_id or not suggested_label:
-                failed += 1
-                logger.warning(f"Invalid result for email {email_id}: {result}")
-                continue
-            
-            # Check if label exists
-            label_exists = suggested_label.lower() in [l.lower() for l in existing_labels]
-            
-            # Create label if needed
-            if not label_exists:
-                try:
-                    await imap_service.create_label(
-                        access_token=access_token,
-                        label_name=suggested_label,
-                        label_list_visibility="labelShow",
-                        message_list_visibility="show"
-                    )
-                    redis_cache.add_label(str(account_id), suggested_label)
-                    existing_labels.append(suggested_label)
-                    logger.info(f"Created new label: {suggested_label}")
-                except Exception as e:
-                    logger.warning(f"Failed to create label {suggested_label}: {e}")
-            
-            # Apply label to email if requested
-            if request.apply_labels:
-                try:
-                    # Get folder from email (you might need to pass this or determine it)
-                    # For now, defaulting to INBOX
-                    folder = "INBOX"
-                    uid = int(email_id)
-                    await imap_service.add_label(uid, suggested_label, folder)
-                    logger.info(f"✅ Applied label '{suggested_label}' to email {email_id}")
-                except Exception as e:
-                    logger.error(f"Failed to apply label to email {email_id}: {e}")
-                    failed += 1
-                    continue
-            
-            results.append(EmailLabelResult(
-                id=email_id,
-                label=suggested_label,
-                reason=reason
-            ))
-            successful += 1
-        
-        logger.info(f"✅ Batch labeling complete: {successful} successful, {failed} failed")
-        
-        return BatchLabelEmailsResponse(
-            results=results,
-            total_processed=len(valid_emails),
-            successful=successful,
-            failed=failed
-        )
-        
-    except ValueError as e:
-        logger.error(f"Error in batch labeling: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error batch labeling emails: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to batch label emails: {str(e)}")
-    finally:
-        if request.apply_labels:
-            await imap_service.disconnect()
 
 @router.get("/accounts/{account_id}/search", response_model=List[EmailResponse])
 async def search_emails(

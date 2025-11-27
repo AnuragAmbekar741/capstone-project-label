@@ -12,12 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { EmailLabelResult } from "@/api/imap/imap";
+import type { SuggestLabelResponse } from "@/api/imap/imap";
 
 interface AutoLabelModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  results: EmailLabelResult[] | null;
+  results: SuggestLabelResponse[] | null;
   isLoading: boolean;
   onApplyLabels: () => void;
   onCancel: () => void;

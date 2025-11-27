@@ -82,9 +82,9 @@ export const AppSidebar: React.FC = () => {
         </SidebarHeader>
 
         {/* Content */}
-        <SidebarContent>
+        <SidebarContent className="overflow-hidden">
           {/* Main Menu Items - System Folders */}
-          <SidebarGroup>
+          <SidebarGroup className="shrink-0">
             <SidebarGroupContent>
               <SidebarMenu>
                 {foldersLoading
@@ -113,11 +113,11 @@ export const AppSidebar: React.FC = () => {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <Separator className="my-4" />
+          <Separator className="my-4 shrink-0" />
 
           {/* Labels Section - Custom Folders */}
-          <SidebarGroup>
-            <div className="px-4 pb-2 text-xs font-semibold text-muted-foreground">
+          <SidebarGroup className="flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="px-4 pb-2 text-xs font-semibold text-muted-foreground shrink-0">
               Labels
             </div>
             <SidebarGroupContent>

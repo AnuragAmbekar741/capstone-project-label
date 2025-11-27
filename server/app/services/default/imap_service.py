@@ -12,6 +12,7 @@ from app.services.base.imap_service import (
 from app.api.utils.email_cleaner import EmailCleaner
 from datetime import datetime, timezone
 from dataclasses import dataclass
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -302,6 +303,53 @@ class GmailImapService(GmailImapServiceBase):
         except Exception as e:
             logger.error(f"Failed to delete email {uid}: {e}")
             return False
+    
+    async def create_label(
+        self,
+        access_token: str,
+        label_name: str,
+        label_list_visibility: str = "labelShow",
+        message_list_visibility: str = "show"
+    ) -> Dict[str, Any]:
+        """
+        Create a new label in Gmail using REST API
+        Note: IMAP doesn't support creating labels, so we use Gmail REST API
+        """
+        url = "https://gmail.googleapis.com/gmail/v1/users/me/labels"
+        
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "name": label_name,
+            "labelListVisibility": label_list_visibility,
+            "messageListVisibility": message_list_visibility
+        }
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json=payload)
+                response.raise_for_status()
+                label_data = response.json()
+                
+                logger.info(f"Successfully created label: {label_name} (ID: {label_data.get('id')})")
+                return label_data
+                
+        except httpx.HTTPStatusError as e:
+            error_detail = "Unknown error"
+            try:
+                error_response = e.response.json()
+                error_detail = error_response.get("error", {}).get("message", str(e))
+            except:
+                error_detail = str(e)
+            
+            logger.error(f"Failed to create label '{label_name}': {error_detail}")
+            raise ValueError(f"Failed to create label: {error_detail}")
+        except Exception as e:
+            logger.error(f"Unexpected error creating label '{label_name}': {e}")
+            raise ValueError(f"Failed to create label: {str(e)}")
     
     def _parse_email(self, uid: int, data: Dict) -> EmailMessage:
         """Parse IMAP email data into EmailMessage with cleaning"""

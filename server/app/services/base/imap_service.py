@@ -78,3 +78,25 @@ class GmailImapServiceBase(ABC):
     async def delete_email(self, uid: int, folder: str = 'INBOX') -> bool:
         """Delete an email"""
         pass
+    
+    @abstractmethod
+    async def create_label(
+        self,
+        access_token: str,
+        label_name: str,
+        label_list_visibility: str = "labelShow",
+        message_list_visibility: str = "show"
+    ) -> Dict[str, Any]:
+        """
+        Create a new label in Gmail using REST API
+        
+        Args:
+            access_token: OAuth access token
+            label_name: Name of the label to create
+            label_list_visibility: "labelShow" or "labelHide"
+            message_list_visibility: "show" or "hide"
+        
+        Returns:
+            Dictionary with label data (id, name, labelListVisibility, messageListVisibility, type)
+        """
+        pass

@@ -152,6 +152,11 @@ async def create_label(
             message_list_visibility=request.message_list_visibility
         )
         
+        # Invalidate Redis cache so new label appears in next fetch
+        redis_cache = RedisLabelCache()
+        redis_cache.invalidate(str(account_id))
+        logger.info(f"Invalidated label cache for account {account_id} after creating label")
+        
         return LabelResponse(
             id=label_data.get("id", ""),
             name=label_data.get("name", ""),
@@ -161,11 +166,10 @@ async def create_label(
         )
         
     except ValueError as e:
-        logger.error(f"Failed to create label: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Failed to create label: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error creating label: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create label")
 
 @router.get("/accounts/{account_id}/emails", response_model=List[EmailResponse])
 async def get_emails(

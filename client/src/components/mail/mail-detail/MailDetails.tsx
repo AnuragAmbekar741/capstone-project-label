@@ -37,6 +37,8 @@ import { getFolderNameFromRoute } from "@/utils/folderMapper";
 import { useGetFolder } from "@/hooks/imap/useFolders";
 import { toast } from "sonner";
 import { DeleteEmailModal } from "@/components/modals/DeleteEmailModal";
+import { useCreateLabel } from "@/hooks/imap/useCreateLabel";
+import { CreateLabelModal } from "@/components/modals/CreateLabelModal";
 
 interface MailDetailProps {
   mail: Mail;
@@ -64,6 +66,9 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
 
   // Delete email mutation hook
   const deleteEmailMutation = useDeleteEmail();
+
+  const createLabelMutation = useCreateLabel();
+  const [showCreateLabelModal, setShowCreateLabelModal] = React.useState(false);
 
   // Handle delete email - open confirmation dialog
   const handleDeleteClick = () => {
@@ -142,6 +147,13 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
     return activeEmail.labels || [];
   }, [activeEmail.labels]);
 
+  const handleDropdownAction = (action: string) => {
+    if (action === "add-label") {
+      setShowCreateLabelModal(true);
+    }
+    // Handle other actions...
+  };
+
   return (
     <>
       <div className="flex h-full flex-col">
@@ -209,7 +221,10 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {EMAIL_DROPDOWN_ITEMS.map((item) => (
-                <DropdownMenuItem key={item.action}>
+                <DropdownMenuItem
+                  key={item.action}
+                  onClick={() => handleDropdownAction(item.action)}
+                >
                   {item.label}
                 </DropdownMenuItem>
               ))}
@@ -309,6 +324,30 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
         mail={mail}
         onConfirm={handleConfirmDelete}
         isDeleting={deleteEmailMutation.isPending}
+      />
+
+      <CreateLabelModal
+        open={showCreateLabelModal}
+        onOpenChange={setShowCreateLabelModal}
+        onCreate={(name) => {
+          if (!accountId) return;
+          createLabelMutation.mutate(
+            {
+              accountId,
+              request: {
+                name,
+                label_list_visibility: "labelShow",
+                message_list_visibility: "show",
+              },
+            },
+            {
+              onSuccess: () => {
+                setShowCreateLabelModal(false);
+              },
+            }
+          );
+        }}
+        isCreating={createLabelMutation.isPending}
       />
     </>
   );

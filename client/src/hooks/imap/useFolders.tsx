@@ -4,7 +4,7 @@ import { AxiosError } from "axios";
 
 export const useGetFolder = (accountId: string) => {
   return useQuery<FolderResponse[], AxiosError>({
-    queryKey: ["userFolders"],
+    queryKey: ["userFolders", accountId], // ← Add accountId to match invalidation
     queryFn: () => getFolders(accountId),
     enabled: !!accountId,
     retry: 1,

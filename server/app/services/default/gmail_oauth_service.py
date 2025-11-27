@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional
 from app.config import settings
 from app.services.base.gmail_oauth_service import GmailOAuthServiceBase
 import logging
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -88,10 +89,20 @@ class GmailOAuthService(GmailOAuthServiceBase):
             credentials = flow.credentials
             
             # Extract token information
+            # Handle timezone-aware/naive datetime for expiry
+            expires_in_seconds = 3600  # default
+            if credentials.expiry:
+                # credentials.expiry might be naive (no timezone), make it UTC-aware
+                expiry = credentials.expiry
+                if expiry.tzinfo is None:
+                    # Naive datetime - assume UTC
+                    expiry = expiry.replace(tzinfo=timezone.utc)
+                expires_in_seconds = int((expiry - datetime.now(timezone.utc)).total_seconds())
+            
             token_data = {
                 'access_token': credentials.token,
-                'refresh_token': credentials.refresh_token,  # May be None if not granted
-                'expires_in': int(credentials.expiry.timestamp()) if credentials.expiry else 3600,
+                'refresh_token': credentials.refresh_token,
+                'expires_in': expires_in_seconds,
                 'scope': ' '.join(credentials.scopes) if credentials.scopes else '',
                 'token_type': 'Bearer'
             }
@@ -126,10 +137,19 @@ class GmailOAuthService(GmailOAuthServiceBase):
             # Refresh the token
             credentials.refresh(Request())
             
-            # Extract new token information
+            # Handle timezone-aware/naive datetime for expiry
+            expires_in_seconds = 3600  # default
+            if credentials.expiry:
+                # credentials.expiry might be naive (no timezone), make it UTC-aware
+                expiry = credentials.expiry
+                if expiry.tzinfo is None:
+                    # Naive datetime - assume UTC
+                    expiry = expiry.replace(tzinfo=timezone.utc)
+                expires_in_seconds = int((expiry - datetime.now(timezone.utc)).total_seconds())
+            
             token_data = {
                 'access_token': credentials.token,
-                'expires_in': int(credentials.expiry.timestamp()) if credentials.expiry else 3600,
+                'expires_in': expires_in_seconds,
                 'scope': ' '.join(credentials.scopes) if credentials.scopes else '',
                 'token_type': 'Bearer'
             }

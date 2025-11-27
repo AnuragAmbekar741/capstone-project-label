@@ -78,7 +78,7 @@ async def get_valid_gmail_account(
             token_data = gmail_oauth_service.refresh_auth_access_token(refresh_token)
             # Update account with new token
             from datetime import datetime, timedelta, timezone
-            expires_in = token_data.get('expires_in', 3600)
+            expires_in = token_data.get('expires_in', 3600)  # Now always in SECONDS
             token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
             
             account.meta['access_token'] = token_data['access_token']
@@ -139,7 +139,7 @@ async def create_label(
     """Create a new label in Gmail"""
     account = await get_valid_gmail_account(account_id, current_user)
     
-    gmail_api_service = GmailApiService()
+    gmail_api_service = GmailImapService()
     try:
         access_token = account.get_access_token
         if not access_token:

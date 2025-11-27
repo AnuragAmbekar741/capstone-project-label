@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 import secrets
 import httpx
@@ -199,14 +199,8 @@ async def gmail_oauth_callback(
         logger.info(f"User email from token: {email_address}")
         
         # Step 4: Calculate token expiry
-        expires_in = token_data.get("expires_in", 3600)  # Default 1 hour
-        # Handle both timestamp (seconds since epoch) and seconds format
-        if isinstance(expires_in, (int, float)) and expires_in > 1000000000:
-            # It's a timestamp (seconds since epoch)
-            token_expiry = datetime.fromtimestamp(expires_in)
-        else:
-            # It's seconds from now
-            token_expiry = datetime.now() + timedelta(seconds=expires_in)
+        expires_in = token_data.get("expires_in", 3600)  # Now always in SECONDS
+        token_expiry = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
         
         # Step 5: Prepare meta data for database
         meta_data = {

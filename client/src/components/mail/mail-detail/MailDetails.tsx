@@ -1,11 +1,5 @@
 import * as React from "react";
-import {
-  Trash2,
-  MoreVertical,
-  MessageSquare,
-  Sparkles,
-  Tag,
-} from "lucide-react";
+import { Trash2, MoreVertical, Sparkles, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -26,11 +20,6 @@ import {
   EMAIL_CONSTANTS,
   sanitizeEmailContent,
 } from "./mailDetails.config";
-import { useThreadEmails } from "@/hooks/imap/useThreadEmails";
-import { useGmailAccounts } from "@/hooks/gmail/useGmailAccount";
-import { ThreadEmailItem } from "./ThreadEmailItem";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDeleteEmail } from "@/hooks/imap/useDeleteEmail";
 import { useRouterState } from "@tanstack/react-router";
 import { getFolderNameFromRoute } from "@/utils/folderMapper";
@@ -44,6 +33,8 @@ import { type SuggestLabelResponse } from "@/api/imap/imap";
 import { useAddLabelToEmail } from "@/hooks/imap/useAddLabelToEmail";
 import { AutoLabelModal } from "@/components/modals/AutoLabelModal";
 import { AxiosError } from "axios";
+import { useGmailAccounts } from "@/hooks/gmail/useGmailAccount";
+
 interface MailDetailProps {
   mail: Mail;
 }
@@ -59,11 +50,6 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
   const folderName = React.useMemo(() => {
     return getFolderNameFromRoute(currentPath, folders) || "INBOX";
   }, [currentPath, folders]);
-
-  const [showThread, setShowThread] = React.useState(true);
-  const [activeThreadEmailId, setActiveThreadEmailId] = React.useState<
-    string | null
-  >(mail.id);
 
   // Delete confirmation modal state
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
@@ -123,29 +109,14 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
     );
   };
 
-  // Fetch thread emails if this email is part of a thread
-  const { data: threadEmails, isLoading: threadLoading } = useThreadEmails({
-    accountId: accountId || "",
-    mail,
-    enabled: !!accountId && (mail.isThread || !!mail.messageId),
-  });
-
-  // Get the active email (either current mail or selected thread email)
-  const activeEmail = React.useMemo(() => {
-    if (threadEmails && activeThreadEmailId) {
-      return threadEmails.find((e) => e.id === activeThreadEmailId) || mail;
-    }
-    return mail;
-  }, [threadEmails, activeThreadEmailId, mail]);
-
   // Get HTML content if available, otherwise use text
   const emailContent = React.useMemo(() => {
-    if (activeEmail.bodyHtml) {
-      return sanitizeEmailContent(activeEmail.bodyHtml);
+    if (mail.bodyHtml) {
+      return sanitizeEmailContent(mail.bodyHtml);
     }
 
-    if (activeEmail.bodyText) {
-      const textWithBreaks = activeEmail.bodyText.replace(
+    if (mail.bodyText) {
+      const textWithBreaks = mail.bodyText.replace(
         /\n/g,
         EMAIL_CONSTANTS.LINE_BREAK_REPLACEMENT
       );
@@ -153,14 +124,12 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
     }
 
     return EMAIL_CONSTANTS.EMPTY_CONTENT;
-  }, [activeEmail.bodyHtml, activeEmail.bodyText]);
-
-  const hasThread = threadEmails && threadEmails.length > 1;
+  }, [mail.bodyHtml, mail.bodyText]);
 
   // Get user labels (filtered from mail.labels which already excludes system labels)
   const userLabels = React.useMemo(() => {
-    return activeEmail.labels || [];
-  }, [activeEmail.labels]);
+    return mail.labels || [];
+  }, [mail.labels]);
 
   const handleDropdownAction = (action: string) => {
     if (action === "add-label") {
@@ -170,7 +139,7 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
   };
 
   // Add this helper function before the component or inside it
-  const getEmailBodyText = (email: typeof activeEmail): string => {
+  const getEmailBodyText = (email: Mail): string => {
     // Prefer text body
     let body = email.bodyText || "";
 
@@ -193,7 +162,7 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
       return;
     }
 
-    const emailBody = getEmailBodyText(activeEmail);
+    const emailBody = getEmailBodyText(mail);
 
     // Skip if no body content
     if (!emailBody) {
@@ -208,8 +177,8 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
       const response = await suggestLabelMutation.mutateAsync({
         accountId,
         request: {
-          email_id: activeEmail.id,
-          subject: activeEmail.subject || "",
+          email_id: mail.id,
+          subject: mail.subject || "",
           body: emailBody,
         },
       });
@@ -300,19 +269,6 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
             </div>
 
             <Separator orientation="vertical" className="h-6" />
-            {hasThread && (
-              <>
-                <Separator orientation="vertical" className="h-6" />
-                <Button
-                  variant={showThread ? "secondary" : "ghost"}
-                  size="icon"
-                  onClick={() => setShowThread(!showThread)}
-                  title={showThread ? "Hide thread" : "Show thread"}
-                >
-                  <MessageSquare className="h-4 w-4" />
-                </Button>
-              </>
-            )}
           </div>
           <div className="ml-auto flex items-center gap-2">
             <Button
@@ -345,76 +301,44 @@ export const MailDetail: React.FC<MailDetailProps> = ({ mail }) => {
           </DropdownMenu>
         </div>
 
-        {/* Mail Content - scrollbar hidden */}
-        <div className="flex-1 overflow-hidden min-w-0 flex">
-          {/* Thread Sidebar */}
-          {hasThread && showThread && (
-            <>
-              <div className="w-80 border-r shrink-0 flex flex-col">
-                <div className="p-3 border-b">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">
-                      Thread ({threadEmails.length})
-                    </h3>
-                    {threadLoading && <Skeleton className="h-4 w-16" />}
+        {/* Mail Content */}
+        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] min-w-0">
+          <div className="flex flex-col gap-4 p-6 max-w-full">
+            <div className="flex items-start justify-between min-w-0">
+              <div className="flex items-start gap-4 min-w-0 flex-1">
+                <Avatar className="shrink-0">
+                  <AvatarFallback>
+                    {mail.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid gap-1 min-w-0 flex-1">
+                  <div className="font-semibold break-words">
+                    {mail.subject}
                   </div>
-                </div>
-                <ScrollArea className="flex-1">
-                  <div className="divide-y">
-                    {threadEmails.map((threadMail) => (
-                      <ThreadEmailItem
-                        key={threadMail.id}
-                        mail={threadMail}
-                        isActive={threadMail.id === activeThreadEmailId}
-                        onClick={() => setActiveThreadEmailId(threadMail.id)}
-                      />
-                    ))}
+                  <div className="text-sm text-muted-foreground break-words">
+                    Reply-To: {mail.email}
                   </div>
-                </ScrollArea>
-              </div>
-              <Separator orientation="vertical" />
-            </>
-          )}
-
-          {/* Main Email Content */}
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-w-0">
-            <div className="flex flex-col gap-4 p-6 max-w-full">
-              <div className="flex items-start justify-between min-w-0">
-                <div className="flex items-start gap-4 min-w-0 flex-1">
-                  <Avatar className="shrink-0">
-                    <AvatarFallback>
-                      {activeEmail.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid gap-1 min-w-0 flex-1">
-                    <div className="font-semibold break-words">
-                      {activeEmail.subject}
-                    </div>
-                    <div className="text-sm text-muted-foreground break-words">
-                      Reply-To: {activeEmail.email}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {activeEmail.date}
-                    </div>
+                  <div className="text-sm text-muted-foreground">
+                    {mail.date}
                   </div>
                 </div>
               </div>
-              <Separator />
-              {/* Email content isolated in a scoped container */}
+            </div>
+            <Separator />
+            {/* Email content isolated in a scoped container */}
+            <div
+              className={EMAIL_CONTENT_CLASSES.wrapper}
+              style={EMAIL_CONTENT_STYLES.wrapper}
+            >
               <div
-                className={EMAIL_CONTENT_CLASSES.wrapper}
-                style={EMAIL_CONTENT_STYLES.wrapper}
-              >
-                <div
-                  className={EMAIL_CONTENT_CLASSES.content}
-                  dangerouslySetInnerHTML={{ __html: emailContent }}
-                  key={activeEmail.id}
-                  style={EMAIL_CONTENT_STYLES.content}
-                />
-              </div>
+                className={EMAIL_CONTENT_CLASSES.content}
+                dangerouslySetInnerHTML={{ __html: emailContent }}
+                key={mail.id}
+                style={EMAIL_CONTENT_STYLES.content}
+              />
             </div>
           </div>
         </div>

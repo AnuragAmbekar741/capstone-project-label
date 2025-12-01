@@ -2,31 +2,20 @@ import { type Config } from "dompurify";
 import DOMPurify from "dompurify";
 
 /**
- * Safe CSS properties allowed in email styles
- * Blocks dangerous properties like background, position, z-index, etc.
+ * Image-specific CSS properties allowed
  */
-const ALLOWED_CSS_PROPERTIES = new Set([
-  // Typography
-  "color",
-  "font-family",
-  "font-size",
-  "font-weight",
-  "font-style",
-  "font-variant",
-  "line-height",
-  "text-align",
-  "text-decoration",
-  "text-transform",
-  "letter-spacing",
-  "word-spacing",
-
-  // Layout (safe ones only)
+const ALLOWED_IMAGE_CSS_PROPERTIES = new Set([
   "width",
   "height",
   "max-width",
   "max-height",
   "min-width",
   "min-height",
+  "display",
+  "object-fit",
+  "object-position",
+  "border",
+  "border-radius",
   "margin",
   "margin-top",
   "margin-right",
@@ -37,54 +26,12 @@ const ALLOWED_CSS_PROPERTIES = new Set([
   "padding-right",
   "padding-bottom",
   "padding-left",
-  "border",
-  "border-top",
-  "border-right",
-  "border-bottom",
-  "border-left",
-  "border-width",
-  "border-style",
-  "border-color",
-  "border-radius",
-
-  // Display (safe values only)
-  "display", // Will filter out 'none' values
-  "visibility", // Will filter out 'hidden' values
-  "overflow",
-  "overflow-x",
-  "overflow-y",
-
-  // List
-  "list-style",
-  "list-style-type",
-  "list-style-position",
-
-  // Table
-  "border-collapse",
-  "border-spacing",
-  "vertical-align",
-
-  // Other safe properties
-  "white-space",
-  "word-wrap",
-  "word-break",
-  "text-overflow",
 ]);
 
 /**
- * Dangerous CSS property values that should be blocked
+ * Sanitize CSS style attribute for images only
  */
-const FORBIDDEN_CSS_VALUES = {
-  display: ["none"],
-  visibility: ["hidden"],
-  position: ["fixed", "absolute", "sticky"],
-  opacity: ["0", "0.0"],
-};
-
-/**
- * Sanitize CSS style attribute - allows safe properties, blocks dangerous ones
- */
-const sanitizeStyleAttribute = (style: string): string => {
+const sanitizeImageStyleAttribute = (style: string): string => {
   if (!style || typeof style !== "string") return "";
 
   // Parse style string into property-value pairs
@@ -105,35 +52,11 @@ const sanitizeStyleAttribute = (style: string): string => {
       (decl): decl is { property: string; value: string } => decl !== null
     );
 
-  // Filter and rebuild safe styles
+  // Filter and rebuild safe styles for images
   const safeDeclarations = declarations
     .filter(({ property, value }) => {
-      // Block background-related properties
-      if (property.startsWith("background")) {
-        return false;
-      }
-
-      // Block position-related properties that can overlay content
-      if (
-        property === "position" ||
-        property === "z-index" ||
-        property === "top" ||
-        property === "right" ||
-        property === "bottom" ||
-        property === "left"
-      ) {
-        return false;
-      }
-
-      // Check if property is allowed
-      if (!ALLOWED_CSS_PROPERTIES.has(property)) {
-        return false;
-      }
-
-      // Check for forbidden values
-      const forbiddenValues =
-        FORBIDDEN_CSS_VALUES[property as keyof typeof FORBIDDEN_CSS_VALUES];
-      if (forbiddenValues && forbiddenValues.includes(value.toLowerCase())) {
+      // Check if property is allowed for images
+      if (!ALLOWED_IMAGE_CSS_PROPERTIES.has(property)) {
         return false;
       }
 
@@ -200,7 +123,7 @@ export const EMAIL_SANITIZE_CONFIG: Config = {
 };
 
 /**
- * Enhanced sanitize function that also sanitizes style attributes
+ * Enhanced sanitize function that removes all style attributes except for images
  */
 export const sanitizeEmailContent = (dirty: string): string => {
   // First, sanitize HTML structure
@@ -210,17 +133,23 @@ export const sanitizeEmailContent = (dirty: string): string => {
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = clean;
 
-  // Sanitize all style attributes
+  // Remove all style attributes except for images
   const elements = tempDiv.querySelectorAll("[style]");
   elements.forEach((element) => {
-    const styleAttr = element.getAttribute("style");
-    if (styleAttr) {
-      const sanitized = sanitizeStyleAttribute(styleAttr);
-      if (sanitized) {
-        element.setAttribute("style", sanitized);
-      } else {
-        element.removeAttribute("style");
+    if (element.tagName.toLowerCase() === "img") {
+      // For images, sanitize and keep only image-specific styles
+      const styleAttr = element.getAttribute("style");
+      if (styleAttr) {
+        const sanitized = sanitizeImageStyleAttribute(styleAttr);
+        if (sanitized) {
+          element.setAttribute("style", sanitized);
+        } else {
+          element.removeAttribute("style");
+        }
       }
+    } else {
+      // For all other elements, remove style attribute completely
+      element.removeAttribute("style");
     }
   });
 
@@ -232,8 +161,8 @@ export const sanitizeEmailContent = (dirty: string): string => {
  */
 export const EMAIL_CONTENT_CLASSES = {
   wrapper:
-    "email-content-wrapper text-sm max-w-full [&_*]:max-w-full [&_img]:max-w-full [&_pre]:overflow-x-auto [&_table]:overflow-x-auto [&_a]:text-primary [&_a]:underline",
-  content: "email-content",
+    "email-content-wrapper text-sm max-w-full [&_*]:max-w-full [&_img]:max-w-full [&_pre]:overflow-x-auto [&_table]:overflow-x-auto [&_a]:text-white [&_a]:underline [&_*]:text-white [&_img]:!text-inherit",
+  content: "email-content text-white",
 };
 
 /**
@@ -249,7 +178,7 @@ export const EMAIL_CONTENT_STYLES = {
     display: "block" as const,
     fontFamily: "inherit",
     fontSize: "inherit",
-    color: "inherit",
+    color: "white",
     lineHeight: "inherit",
   },
 };

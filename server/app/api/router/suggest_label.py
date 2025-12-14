@@ -81,7 +81,9 @@ async def suggest_label_for_email(
     Only returns suggestions - does not create or apply labels.
     """
     account = await get_valid_gmail_account(account_id, current_user)
-    
+    if not account:
+        raise HTTPException(status_code=404, detail="Gmail account not found")
+        
     redis_cache = RedisLabelCache()
     
     try:

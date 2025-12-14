@@ -60,8 +60,7 @@ async def google_login(request_data: GoogleLoginRequest):
         # Step 2: Check if user exists in database
         logger.info("Step 2: Checking if user exists in database...")
         user = await UserRepository.get_user_by_google_id(google_user["google_id"])
-        
-        is_new_user = False
+    
         
         # Step 3: Create user if new
         if not user:
@@ -71,7 +70,6 @@ async def google_login(request_data: GoogleLoginRequest):
                 email=google_user["email"],
                 name=google_user["name"]
             )
-            is_new_user = True
             logger.info(f"✅ New user created: ID={user.id}, Email={user.email}")
         else:
             logger.info(f"✅ Existing user found: ID={user.id}, Email={user.email}")
